@@ -18,7 +18,7 @@ pub enum Error {
         problem: ProblemDetails,
     },
 
-    #[error("API request failed with status {status}: {body}")]
+    #[error("API request returned an unexpected response: {body}")]
     UnexpectedResponse { status: StatusCode, body: String },
 }
 

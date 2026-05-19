@@ -1,4 +1,4 @@
-# opsd-rust
+# Opsd Rust library
 
 `opsd-rust` is the Rust client library for the Opsd API. It provides a small typed wrapper around
 the current public endpoints, including the hello-world sandbox route and the user endpoints.
