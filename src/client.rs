@@ -56,6 +56,21 @@ impl OpsdClient {
         decode_response(response).await
     }
 
+    pub async fn hello_application(&self) -> Result<HelloResponse, Error> {
+        let url = self
+            .base_url
+            .join("hello/application")
+            .expect("hard-coded endpoint path must be valid");
+        let response = self
+            .http_client
+            .get(url)
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .send()
+            .await?;
+
+        decode_response(response).await
+    }
+
     pub async fn list_users(&self) -> Result<Vec<User>, Error> {
         let url = self
             .base_url
