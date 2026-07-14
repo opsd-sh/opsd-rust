@@ -6,6 +6,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("invalid API credential")]
+    InvalidApiCredential,
+
     #[error("invalid base URL `{base_url}`: {message}")]
     InvalidBaseUrl { base_url: String, message: String },
 
