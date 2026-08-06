@@ -17,3 +17,8 @@ the HTTP Bearer scheme without exposing the secret in debug output:
 let credential = ApiCredential::new(secret)?;
 let client = OpsdClient::new(credential)?;
 ```
+
+## License
+
+Licensed under either the Apache License, Version 2.0 or the MIT license, at
+your option.
