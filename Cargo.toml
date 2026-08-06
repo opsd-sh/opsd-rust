@@ -2,7 +2,16 @@
 name = "opsd-rust"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.86"
+description = "Rust client library for the Opsd API"
+homepage = "https://opsd.sh"
+repository = "https://github.com/opsd-sh/opsd-rust"
+documentation = "https://docs.rs/opsd-rust"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
+keywords = ["opsd", "api", "client", "sdk"]
+categories = ["api-bindings", "web-programming::http-client"]
+publish = ["crates-io"]
 
 [dependencies]
 reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
