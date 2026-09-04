@@ -42,7 +42,10 @@ jobs:
         run: cargo +${{ matrix.rust }} fmt --check
 
       - name: Run tests
-        run: cargo +${{ matrix.rust }} test --locked
+        run: cargo +${{ matrix.rust }} test --locked --all-features
+
+      - name: Run types-only tests
+        run: cargo +${{ matrix.rust }} test --locked --no-default-features
 
       - name: Run Clippy
         run: >-
@@ -50,5 +53,14 @@ jobs:
           --locked
           --all-targets
           --all-features
+          --
+          -D warnings
+
+      - name: Run types-only Clippy
+        run: >-
+          cargo +${{ matrix.rust }} clippy
+          --locked
+          --all-targets
+          --no-default-features
           --
           -D warnings

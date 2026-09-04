@@ -1,8 +1,15 @@
+mod businesses;
+mod employees;
+mod employments;
+mod hello;
+mod paye_schemes;
+mod payroll_runs;
+
 use std::sync::LazyLock;
 
 use reqwest::{
     Client as HttpClient, RequestBuilder, Response,
-    header::{ACCEPT, AUTHORIZATION, HeaderValue},
+    header::{AUTHORIZATION, HeaderValue},
 };
 use serde::de::DeserializeOwned;
 use url::Url;
@@ -10,7 +17,6 @@ use url::Url;
 use crate::{
     ApiCredential,
     error::{Error, ProblemDetails},
-    models::{CreateUserRequest, HelloResponse, User},
 };
 
 const ACCEPT_JSON: HeaderValue =
@@ -49,65 +55,14 @@ impl OpsdClient {
         &self.base_url
     }
 
-    pub async fn hello_world(&self) -> Result<HelloResponse, Error> {
-        let url = self
-            .base_url
-            .join("hello/world")
-            .expect("hard-coded endpoint path must be valid");
-        let response = self
-            .authenticate(self.http_client.get(url))
-            .header(ACCEPT, ACCEPT_JSON.clone())
-            .send()
-            .await?;
-
-        decode_response(response).await
-    }
-
-    pub async fn hello_application(&self) -> Result<HelloResponse, Error> {
-        let url = self
-            .base_url
-            .join("hello/application")
-            .expect("hard-coded endpoint path must be valid");
-        let response = self
-            .authenticate(self.http_client.get(url))
-            .header(ACCEPT, ACCEPT_JSON.clone())
-            .send()
-            .await?;
-
-        decode_response(response).await
-    }
-
-    pub async fn list_users(&self) -> Result<Vec<User>, Error> {
-        let url = self
-            .base_url
-            .join("test/users")
-            .expect("hard-coded endpoint path must be valid");
-        let response = self
-            .authenticate(self.http_client.get(url))
-            .header(ACCEPT, ACCEPT_JSON.clone())
-            .send()
-            .await?;
-
-        decode_response(response).await
-    }
-
-    pub async fn create_user(&self, request: &CreateUserRequest) -> Result<User, Error> {
-        let url = self
-            .base_url
-            .join("test/users")
-            .expect("hard-coded endpoint path must be valid");
-        let response = self
-            .authenticate(self.http_client.post(url))
-            .header(ACCEPT, ACCEPT_JSON.clone())
-            .json(request)
-            .send()
-            .await?;
-
-        decode_response(response).await
-    }
-
     fn authenticate(&self, request: RequestBuilder) -> RequestBuilder {
         request.header(AUTHORIZATION, self.credential.authorization_header())
+    }
+
+    fn endpoint(&self, path: &str) -> Url {
+        self.base_url
+            .join(path)
+            .expect("client endpoint path must be valid")
     }
 }
 
@@ -154,14 +109,29 @@ where
         });
     }
 
-    if let Ok(problem) = serde_json::from_slice::<ProblemDetails>(&body) {
-        return Err(Error::Api { status, problem });
+    Err(decode_error(status, &body))
+}
+
+async fn expect_no_content(response: Response) -> Result<(), Error> {
+    let status = response.status();
+    let body = response.bytes().await?;
+
+    if status == reqwest::StatusCode::NO_CONTENT {
+        return Ok(());
     }
 
-    Err(Error::UnexpectedResponse {
+    Err(decode_error(status, &body))
+}
+
+fn decode_error(status: reqwest::StatusCode, body: &[u8]) -> Error {
+    if let Ok(problem) = serde_json::from_slice::<ProblemDetails>(body) {
+        return Error::Api { status, problem };
+    }
+
+    Error::UnexpectedResponse {
         status,
-        body: String::from_utf8_lossy(&body).into_owned(),
-    })
+        body: String::from_utf8_lossy(body).into_owned(),
+    }
 }
 
 #[cfg(test)]
