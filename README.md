@@ -1,8 +1,11 @@
 # Opsd Rust library
 
-`opsd` is the Rust client library for the Opsd API. It provides a small
-typed wrapper around the current public endpoints, including the hello-world
-sandbox route and the user endpoints.
+`opsd` is the Rust client library for the Opsd API. It provides a small typed
+wrapper around the current public endpoints, including business and payroll
+workflows and the existing sandbox endpoints.
+
+The public `opsd::types` module owns the API-facing domain and operation types
+independently of the optional HTTP client.
 
 The default constructor, `OpsdClient::new()`, targets the production API at
 `https://api.opsd.sh/v1/`.
