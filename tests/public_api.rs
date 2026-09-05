@@ -308,6 +308,94 @@ fn assert_request_lines(requests: &[String]) {
     }
 }
 
+#[tokio::test]
+async fn billing_status_is_authenticated_business_scoped_and_decoded() {
+    let server = MockServer::start(vec![
+        json(200, r#"{"payment_method_saved":true}"#),
+        json(200, r#"{"payment_method_saved":false}"#),
+    ]);
+    let client = OpsdClient::new_base(
+        server.base_url.clone(),
+        ApiCredential::new("test-token").unwrap(),
+    )
+    .unwrap();
+    let business_id = BusinessId::from_str("22222222-2222-4222-8222-222222222222").unwrap();
+    assert!(
+        client
+            .get_billing_status(business_id)
+            .await
+            .unwrap()
+            .payment_method_saved
+    );
+    assert!(
+        !client
+            .get_billing_status(business_id)
+            .await
+            .unwrap()
+            .payment_method_saved
+    );
+    for request in server.finish() {
+        assert_eq!(
+            request.lines().next(),
+            Some("GET /v1/businesses/22222222-2222-4222-8222-222222222222/billing/status HTTP/1.1")
+        );
+        let headers = request.to_ascii_lowercase();
+        assert!(headers.contains("authorization: bearer test-token\r\n"));
+        assert!(headers.contains("accept: application/json, application/problem+json\r\n"));
+    }
+}
+
+#[tokio::test]
+async fn billing_status_preserves_api_errors() {
+    for status in [401, 403, 404] {
+        let body = format!(
+            r#"{{"type":"https://api.opsd.sh/problems/access","title":"Access error","status":{status},"detail":"Access denied","category":"request"}}"#
+        );
+        let server = MockServer::start(vec![MockResponse {
+            status,
+            reason: "Access error",
+            content_type: Some("application/problem+json"),
+            body,
+        }]);
+        let client = OpsdClient::new_base(
+            server.base_url.clone(),
+            ApiCredential::new("test-token").unwrap(),
+        )
+        .unwrap();
+        let id = BusinessId::from_str("22222222-2222-4222-8222-222222222222").unwrap();
+        let error = client.get_billing_status(id).await.unwrap_err();
+        match error {
+            opsd::Error::Api {
+                status: actual,
+                problem,
+            } => {
+                assert_eq!(actual.as_u16(), status);
+                assert_eq!(problem.detail, "Access denied");
+            }
+            other => panic!("expected API error, got {other:?}"),
+        }
+        server.finish();
+    }
+}
+
+#[test]
+fn billing_status_model_requires_a_boolean_and_round_trips() {
+    use opsd::types::GetBillingStatusResponse;
+    for saved in [false, true] {
+        let value = serde_json::json!({"payment_method_saved": saved});
+        let status: GetBillingStatusResponse = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(status.payment_method_saved, saved);
+        assert_eq!(serde_json::to_value(status).unwrap(), value);
+    }
+    for value in [
+        serde_json::json!({}),
+        serde_json::json!({"payment_method_saved": "true"}),
+        serde_json::json!({"payment_method_saved": null}),
+    ] {
+        assert!(serde_json::from_value::<GetBillingStatusResponse>(value).is_err());
+    }
+}
+
 struct MockServer {
     base_url: Url,
     requests: Receiver<String>,

@@ -1,3 +1,4 @@
+mod billing;
 mod businesses;
 mod employees;
 mod employments;
