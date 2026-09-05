@@ -1,5 +1,6 @@
 //! Shared domain, operation, and wire types for the Opsd public API.
 
+mod billing;
 mod businesses;
 mod email;
 mod employees;
@@ -10,6 +11,7 @@ mod paye_schemes;
 mod payroll_runs;
 mod sandbox;
 
+pub use billing::*;
 pub use businesses::*;
 pub use email::EmailAddress;
 pub use employees::*;
