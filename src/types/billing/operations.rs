@@ -2,16 +2,15 @@ use serde::{Deserialize, Serialize};
 
 use super::wire;
 
-/// Business-level payment setup status returned by the public API.
+/// Live payment setup status for a business or practice payer.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(
     from = "wire::GetBillingStatusResponse",
     into = "wire::GetBillingStatusResponse"
 )]
 pub struct GetBillingStatusResponse {
-    /// Whether payment setup has been confirmed for the business.
-    /// This is not a live check of the saved method or a promise that a future
-    /// charge will succeed. A false value can mean confirmation is still pending.
+    /// Whether Stripe currently has a default payment method.
+    /// This does not guarantee that a future charge will succeed.
     pub payment_method_saved: bool,
 }
 

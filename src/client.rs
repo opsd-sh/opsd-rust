@@ -5,6 +5,7 @@ mod employments;
 mod hello;
 mod paye_schemes;
 mod payroll_runs;
+mod practices;
 
 use std::sync::LazyLock;
 

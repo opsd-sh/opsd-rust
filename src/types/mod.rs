@@ -9,6 +9,7 @@ mod error;
 mod identifiers;
 mod paye_schemes;
 mod payroll_runs;
+mod practices;
 mod sandbox;
 
 pub use billing::*;
@@ -18,8 +19,10 @@ pub use employees::*;
 pub use employments::*;
 pub use error::ParseError;
 pub use identifiers::{
-    BusinessId, BusinessInvitationId, EmployeeId, EmploymentId, PayeSchemeId, PayrollRunId, UserId,
+    BusinessId, BusinessInvitationId, EmployeeId, EmploymentId, InvoiceId, PayeSchemeId,
+    PayrollRunId, PracticeId, PracticeInvitationId, UserId,
 };
 pub use paye_schemes::*;
 pub use payroll_runs::*;
+pub use practices::*;
 pub use sandbox::*;
