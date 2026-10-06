@@ -80,6 +80,22 @@ uuid_identifier!(
     "user ID must be a UUID"
 );
 
+uuid_identifier!(
+    /// Public identifier of an Opsd practice.
+    PracticeId,
+    "practice ID must be a UUID"
+);
+uuid_identifier!(
+    /// Public identifier of a practice invitation.
+    PracticeInvitationId,
+    "practice invitation ID must be a UUID"
+);
+uuid_identifier!(
+    /// Public identifier of an Opsd invoice (not a Stripe invoice ID).
+    InvoiceId,
+    "invoice ID must be a UUID"
+);
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;

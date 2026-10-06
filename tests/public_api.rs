@@ -1,5 +1,8 @@
 #![cfg(feature = "client")]
 
+#[path = "support/practice_billing.rs"]
+mod practice_billing;
+
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
