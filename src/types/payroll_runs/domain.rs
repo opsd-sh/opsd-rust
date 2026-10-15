@@ -5,7 +5,8 @@ use time::{Date, Month, OffsetDateTime};
 use crate::types::{EmploymentId, ParseError, PayeSchemeId, PayrollRunId, UserId};
 
 /// Contractual date on which employees in a payroll run are paid.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct PayrollPaymentDate(Date);
 
 impl PayrollPaymentDate {
@@ -45,6 +46,17 @@ impl PayrollPaymentDate {
     }
 }
 
+impl TryFrom<String> for PayrollPaymentDate {
+    type Error = ParseError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::parse(&value)
+    }
+}
+impl From<PayrollPaymentDate> for String {
+    fn from(value: PayrollPaymentDate) -> Self {
+        value.to_string()
+    }
+}
 impl FromStr for PayrollPaymentDate {
     type Err = ParseError;
 
@@ -102,6 +114,7 @@ impl fmt::Display for PayrollRunStatus {
 pub struct PayrollRun {
     pub id: PayrollRunId,
     pub paye_scheme_id: PayeSchemeId,
+    pub pay_schedule_id: crate::types::PayScheduleId,
     pub payment_date: PayrollPaymentDate,
     pub status: PayrollRunStatus,
     pub employment_count: u64,
@@ -115,6 +128,8 @@ pub struct PayrollRun {
 pub struct PayrollRunDetails {
     pub run: PayrollRun,
     pub employment_ids: Vec<EmploymentId>,
+    pub payments: Vec<super::PayrollPayment>,
+    pub calculation: Option<super::PayrollPreviewResponse>,
 }
 
 #[cfg(test)]

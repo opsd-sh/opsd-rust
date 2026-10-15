@@ -73,6 +73,8 @@ pub struct PayeScheme {
     pub name: PayeSchemeName,
     pub employer_reference: EmployerReference,
     pub accounts_office_reference: AccountsOfficeReference,
+    pub tax_year_start: Option<i32>,
+    pub employment_allowance: Option<crate::types::EmploymentAllowance>,
     pub created_at: OffsetDateTime,
 }
 

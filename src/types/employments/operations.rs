@@ -12,6 +12,11 @@ use crate::types::{EmployeeId, EmploymentId, ParseError, PayeSchemeId};
 pub struct CreateEmploymentRequest {
     pub employee_id: EmployeeId,
     pub paye_scheme_id: PayeSchemeId,
+    pub pay_schedule_id: crate::types::PayScheduleId,
+    pub monthly_gross_pay_pence: crate::types::NonNegativePence,
+    pub start_date: crate::types::EmploymentDate,
+    pub ni_category: crate::types::NiCategory,
+    pub starter_information: crate::types::StarterInformation,
 }
 
 /// Response returned after creating an employment.
@@ -33,6 +38,11 @@ impl From<CreateEmploymentRequest> for wire::CreateEmploymentRequest {
         Self {
             employee_id: value.employee_id.to_string(),
             paye_scheme_id: value.paye_scheme_id.to_string(),
+            pay_schedule_id: value.pay_schedule_id.to_string(),
+            monthly_gross_pay_pence: value.monthly_gross_pay_pence,
+            start_date: value.start_date,
+            ni_category: value.ni_category,
+            starter_information: value.starter_information,
         }
     }
 }
@@ -44,6 +54,11 @@ impl TryFrom<wire::CreateEmploymentRequest> for CreateEmploymentRequest {
         Ok(Self {
             employee_id: EmployeeId::parse(&value.employee_id)?,
             paye_scheme_id: PayeSchemeId::parse(&value.paye_scheme_id)?,
+            pay_schedule_id: crate::types::PayScheduleId::parse(&value.pay_schedule_id)?,
+            monthly_gross_pay_pence: value.monthly_gross_pay_pence,
+            start_date: value.start_date,
+            ni_category: value.ni_category,
+            starter_information: value.starter_information,
         })
     }
 }
@@ -53,6 +68,8 @@ fn employment_from_wire(value: wire::Employment) -> Result<Employment, ParseErro
         id: EmploymentId::parse(&value.id)?,
         employee_id: EmployeeId::parse(&value.employee_id)?,
         paye_scheme_id: PayeSchemeId::parse(&value.paye_scheme_id)?,
+        pay_schedule_id: crate::types::PayScheduleId::parse(&value.pay_schedule_id)?,
+        payroll_settings: value.payroll_settings,
         created_at: value.created_at,
     })
 }
@@ -62,6 +79,8 @@ fn employment_into_wire(value: Employment) -> wire::Employment {
         id: value.id.to_string(),
         employee_id: value.employee_id.to_string(),
         paye_scheme_id: value.paye_scheme_id.to_string(),
+        pay_schedule_id: value.pay_schedule_id.to_string(),
+        payroll_settings: value.payroll_settings,
         created_at: value.created_at,
     }
 }
@@ -104,3 +123,8 @@ impl From<ListEmploymentsResponse> for Vec<wire::Employment> {
             .collect()
     }
 }
+
+/// Response for reading an employment.
+pub type GetEmploymentResponse = CreateEmploymentResponse;
+/// Response after updating an employment.
+pub type UpdateEmploymentResponse = CreateEmploymentResponse;

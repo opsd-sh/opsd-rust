@@ -4,6 +4,7 @@ use time::OffsetDateTime;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(super) struct CreatePayrollRunRequest {
     pub(super) paye_scheme_id: String,
+    pub(super) pay_schedule_id: String,
     pub(super) payment_date: String,
 }
 
@@ -11,6 +12,7 @@ pub(super) struct CreatePayrollRunRequest {
 pub(super) struct PayrollRun {
     pub(super) id: String,
     pub(super) paye_scheme_id: String,
+    pub(super) pay_schedule_id: String,
     pub(super) payment_date: String,
     pub(super) status: String,
     pub(super) employment_count: u64,
@@ -26,4 +28,6 @@ pub(super) struct PayrollRunDetails {
     #[serde(flatten)]
     pub(super) run: PayrollRun,
     pub(super) employment_ids: Vec<String>,
+    pub(super) payments: Vec<super::PayrollPayment>,
+    pub(super) calculation: Option<super::PayrollPreviewResponse>,
 }

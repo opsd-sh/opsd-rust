@@ -41,3 +41,41 @@ impl OpsdClient {
         decode_response(response).await
     }
 }
+
+use crate::types::*;
+impl OpsdClient {
+    /// Reads current employment defaults and active-year tax settings.
+    pub async fn get_employment(
+        &self,
+        business_id: BusinessId,
+        employment_id: EmploymentId,
+    ) -> Result<GetEmploymentResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/employments/{employment_id}"
+        ));
+        let response = self
+            .authenticate(self.http_client.get(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Updates starter settings or applies an HMRC notice.
+    pub async fn update_employment(
+        &self,
+        business_id: BusinessId,
+        employment_id: EmploymentId,
+        request: &UpdateEmploymentRequest,
+    ) -> Result<UpdateEmploymentResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/employments/{employment_id}"
+        ));
+        let response = self
+            .authenticate(self.http_client.patch(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+}

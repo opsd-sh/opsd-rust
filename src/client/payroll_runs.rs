@@ -116,3 +116,58 @@ impl OpsdClient {
         expect_no_content(response).await
     }
 }
+
+use crate::types::*;
+impl OpsdClient {
+    /// Calculates a draft using current settings without saving results.
+    pub async fn preview_payroll_run(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+    ) -> Result<PayrollPreviewResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/preview"
+        ));
+        let response = self
+            .authenticate(self.http_client.get(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Overrides one saved draft gross payment, without changing regular monthly pay.
+    pub async fn update_payroll_payment(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+        employment_id: EmploymentId,
+        request: &UpdatePayrollPaymentRequest,
+    ) -> Result<(), Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/employments/{employment_id}"
+        ));
+        let response = self
+            .authenticate(self.http_client.patch(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        expect_no_content(response).await
+    }
+    /// Discards a draft run. Finalised payroll cannot be deleted.
+    pub async fn discard_payroll_run(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+    ) -> Result<(), Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}"
+        ));
+        let response = self
+            .authenticate(self.http_client.delete(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .send()
+            .await?;
+        expect_no_content(response).await
+    }
+}
