@@ -70,6 +70,16 @@ uuid_identifier!(
     "PAYE scheme ID must be a UUID"
 );
 uuid_identifier!(
+    /// Public identifier of a pay schedule within a PAYE scheme.
+    PayScheduleId,
+    "pay schedule ID must be a UUID"
+);
+uuid_identifier!(
+    /// Public identifier of a scheme rollover operation.
+    PayeSchemeRolloverId,
+    "PAYE scheme rollover ID must be a UUID"
+);
+uuid_identifier!(
     /// Public identifier of a payroll run.
     PayrollRunId,
     "payroll run ID must be a UUID"

@@ -3,6 +3,7 @@ mod businesses;
 mod employees;
 mod employments;
 mod hello;
+mod pay_schedules;
 mod paye_schemes;
 mod payroll_runs;
 mod practices;

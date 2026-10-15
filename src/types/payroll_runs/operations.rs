@@ -11,6 +11,7 @@ use crate::types::{EmploymentId, ParseError, PayeSchemeId, PayrollRunId, UserId}
 )]
 pub struct CreatePayrollRunRequest {
     pub paye_scheme_id: PayeSchemeId,
+    pub pay_schedule_id: crate::types::PayScheduleId,
     pub payment_date: PayrollPaymentDate,
 }
 
@@ -95,6 +96,7 @@ impl TryFrom<wire::CreatePayrollRunRequest> for CreatePayrollRunRequest {
     fn try_from(value: wire::CreatePayrollRunRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             paye_scheme_id: PayeSchemeId::parse(&value.paye_scheme_id)?,
+            pay_schedule_id: crate::types::PayScheduleId::parse(&value.pay_schedule_id)?,
             payment_date: PayrollPaymentDate::parse(&value.payment_date)?,
         })
     }
@@ -104,6 +106,7 @@ impl From<CreatePayrollRunRequest> for wire::CreatePayrollRunRequest {
     fn from(value: CreatePayrollRunRequest) -> Self {
         Self {
             paye_scheme_id: value.paye_scheme_id.to_string(),
+            pay_schedule_id: value.pay_schedule_id.to_string(),
             payment_date: value.payment_date.to_string(),
         }
     }
@@ -113,6 +116,7 @@ fn run_from_wire(value: wire::PayrollRun) -> Result<PayrollRun, ParseError> {
     Ok(PayrollRun {
         id: PayrollRunId::parse(&value.id)?,
         paye_scheme_id: PayeSchemeId::parse(&value.paye_scheme_id)?,
+        pay_schedule_id: crate::types::PayScheduleId::parse(&value.pay_schedule_id)?,
         payment_date: PayrollPaymentDate::parse(&value.payment_date)?,
         status: PayrollRunStatus::parse(&value.status)?,
         employment_count: value.employment_count,
@@ -129,6 +133,7 @@ fn run_into_wire(value: PayrollRun) -> wire::PayrollRun {
     wire::PayrollRun {
         id: value.id.to_string(),
         paye_scheme_id: value.paye_scheme_id.to_string(),
+        pay_schedule_id: value.pay_schedule_id.to_string(),
         payment_date: value.payment_date.to_string(),
         status: value.status.to_string(),
         employment_count: value.employment_count,
@@ -160,6 +165,8 @@ impl From<ListPayrollRunsResponse> for Vec<wire::PayrollRun> {
 fn details_from_wire(value: wire::PayrollRunDetails) -> Result<PayrollRunDetails, ParseError> {
     Ok(PayrollRunDetails {
         run: run_from_wire(value.run)?,
+        payments: value.payments,
+        calculation: value.calculation,
         employment_ids: value
             .employment_ids
             .into_iter()
@@ -171,6 +178,8 @@ fn details_from_wire(value: wire::PayrollRunDetails) -> Result<PayrollRunDetails
 fn details_into_wire(value: PayrollRunDetails) -> wire::PayrollRunDetails {
     wire::PayrollRunDetails {
         run: run_into_wire(value.run),
+        payments: value.payments,
+        calculation: value.calculation,
         employment_ids: value
             .employment_ids
             .into_iter()

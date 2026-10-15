@@ -54,6 +54,46 @@ Website billing-portal sessions use browser cookies, not API credentials, and
 are intentionally not included. All public models remain available with
 `default-features = false` when only API types are needed.
 
+## Payroll calculations
+
+Scheme creation requires `tax_year_start` and an explicit `EmploymentAllowance`
+decision. Create a monthly schedule with `create_pay_schedule` before creating
+employments or draft runs; both requests require its `PayScheduleId`.
+
+New employments require a start date, NI category, monthly gross pay and
+`StarterInformation` (`P45`, `Checklist` or `NotProvided`). P45 tax details and
+HMRC notices use cumulative/non-cumulative enum variants so irrelevant amounts
+cannot accompany W1/M1 treatment. Amounts are sterling pence; tax amounts are
+signed to preserve refunds. Tax codes and year-specific HMRC rules are validated
+by the server; this public library has no dependency on HMRC calculation crates.
+
+`get_employment` returns the original starter evidence and active-year tax
+settings. `update_employment` accepts `UpdateEmploymentRequest::Settings` or
+`::TaxCodeNotice`; notice updates cannot also contain starter changes. For a
+cumulative notice, omitted earlier-job amounts retain stored cumulative totals.
+Switching from non-cumulative treatment requires explicit amounts, including
+zero where appropriate. These amounts are separate from this employment's YTD.
+
+`preview_payroll_run` calculates a draft with current settings and saved gross
+inputs. `update_payroll_payment` overrides one draft payment in pence, and
+`discard_payroll_run` deletes a draft. Finalisation stores the calculation;
+`get_payroll_run` and `finalize_payroll_run` retain its payments, inputs, YTD and
+totals in `details.calculation`. Drafts and historical runs without saved results
+have `None`. Subsequent notices do not rewrite saved results.
+
+`rollover_paye_scheme` takes the destination year, Employment Allowance decision
+and an explicit list of new-year notices (`[]` after checking none apply).
+The rollover contract includes opserver sending an end-of-year FPS for the
+closing year and an EPS declaring the Employment Allowance decision for the new
+year, alongside closing the old year and preparing new-year employment settings.
+Retry with the same request to resume an interrupted rollover. The response
+reports the rollover status returned by the server. The server currently supports
+2026–27 calculations and rollover rules; entering 2027–28 is not yet supported.
+
+These changes add required fields to the creation requests. Release the updated
+SDK before updating consumers that use the published crate. All payroll models
+remain available with `default-features = false`.
+
 ## License
 
 Licensed under either the Apache License, Version 2.0 or the MIT license, at

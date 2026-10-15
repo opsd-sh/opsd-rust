@@ -41,3 +41,27 @@ impl OpsdClient {
         decode_response(response).await
     }
 }
+
+use crate::types::*;
+impl OpsdClient {
+    /// Requests year rollover, including an end-of-year FPS and a new-year EPS.
+    /// The EPS declares the supplied Employment Allowance decision.
+    /// Retry the same request to resume an interrupted rollover.
+    pub async fn rollover_paye_scheme(
+        &self,
+        business_id: BusinessId,
+        paye_scheme_id: PayeSchemeId,
+        request: &RolloverPayeSchemeRequest,
+    ) -> Result<RolloverPayeSchemeResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/paye-schemes/{paye_scheme_id}/rollover"
+        ));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+}

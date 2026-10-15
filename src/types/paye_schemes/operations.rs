@@ -13,6 +13,8 @@ pub struct CreatePayeSchemeRequest {
     pub name: PayeSchemeName,
     pub employer_reference: EmployerReference,
     pub accounts_office_reference: AccountsOfficeReference,
+    pub tax_year_start: i32,
+    pub employment_allowance: crate::types::EmploymentAllowance,
 }
 
 /// Response returned after creating a PAYE scheme.
@@ -34,6 +36,8 @@ impl TryFrom<wire::CreatePayeSchemeRequest> for CreatePayeSchemeRequest {
 
     fn try_from(value: wire::CreatePayeSchemeRequest) -> Result<Self, Self::Error> {
         Ok(Self {
+            tax_year_start: value.tax_year_start,
+            employment_allowance: value.employment_allowance,
             name: PayeSchemeName::parse(&value.name)?,
             employer_reference: EmployerReference::parse(&value.employer_reference)?,
             accounts_office_reference: AccountsOfficeReference::parse(
@@ -46,6 +50,8 @@ impl TryFrom<wire::CreatePayeSchemeRequest> for CreatePayeSchemeRequest {
 impl From<CreatePayeSchemeRequest> for wire::CreatePayeSchemeRequest {
     fn from(value: CreatePayeSchemeRequest) -> Self {
         Self {
+            tax_year_start: value.tax_year_start,
+            employment_allowance: value.employment_allowance,
             name: value.name.to_string(),
             employer_reference: value.employer_reference.to_string(),
             accounts_office_reference: value.accounts_office_reference.to_string(),
@@ -61,6 +67,8 @@ fn scheme_from_wire(value: wire::PayeScheme) -> Result<PayeScheme, ParseError> {
         accounts_office_reference: AccountsOfficeReference::parse(
             &value.accounts_office_reference,
         )?,
+        tax_year_start: value.tax_year_start,
+        employment_allowance: value.employment_allowance,
         created_at: value.created_at,
     })
 }
@@ -71,6 +79,8 @@ fn scheme_into_wire(value: PayeScheme) -> wire::PayeScheme {
         name: value.name.to_string(),
         employer_reference: value.employer_reference.to_string(),
         accounts_office_reference: value.accounts_office_reference.to_string(),
+        tax_year_start: value.tax_year_start,
+        employment_allowance: value.employment_allowance,
         created_at: value.created_at,
     }
 }
