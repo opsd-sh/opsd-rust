@@ -19,6 +19,8 @@ pub enum Error {
     Api {
         status: StatusCode,
         problem: ProblemDetails,
+        /// Seconds before the API permits another attempt, when supplied.
+        retry_after_seconds: Option<u64>,
     },
 
     #[error("API request returned an unexpected response: {body}")]
@@ -42,6 +44,16 @@ impl Display for ProblemDetails {
 }
 
 impl Error {
+    pub fn retry_after_seconds(&self) -> Option<u64> {
+        match self {
+            Self::Api {
+                retry_after_seconds,
+                ..
+            } => *retry_after_seconds,
+            _ => None,
+        }
+    }
+
     pub fn problem_details(&self) -> Option<&ProblemDetails> {
         match self {
             Error::Api { problem, .. } => Some(problem),

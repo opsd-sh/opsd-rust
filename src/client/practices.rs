@@ -231,3 +231,35 @@ impl OpsdClient {
         expect_no_content(response).await
     }
 }
+
+use crate::types::PracticeReportingDetails;
+impl OpsdClient {
+    /// Reads or replaces the practice’s HMRC reporting details.
+    pub async fn get_practice_hmrc_reporting(
+        &self,
+        practice_id: PracticeId,
+    ) -> Result<PracticeReportingDetails, Error> {
+        let url = self.endpoint(&format!("practices/{practice_id}/hmrc-reporting"));
+        let response = self
+            .authenticate(self.http_client.get(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Reads or replaces the practice’s HMRC reporting details.
+    pub async fn update_practice_hmrc_reporting(
+        &self,
+        practice_id: PracticeId,
+        request: &PracticeReportingDetails,
+    ) -> Result<PracticeReportingDetails, Error> {
+        let url = self.endpoint(&format!("practices/{practice_id}/hmrc-reporting"));
+        let response = self
+            .authenticate(self.http_client.put(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+}

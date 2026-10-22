@@ -1,5 +1,8 @@
 #![cfg(feature = "client")]
 
+#[path = "support/submissions.rs"]
+mod submissions;
+
 #[path = "support/payroll.rs"]
 mod payroll;
 #[path = "support/practice_billing.rs"]
@@ -13,6 +16,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+use opsd::types::*;
 use opsd::types::{
     EmploymentAllowance, EmploymentDate, NiCategory, NonNegativePence, PayScheduleId,
     StarterDeclaration, StarterInformation,
@@ -35,11 +39,11 @@ const BUSINESS: &str =
 const MEMBER: &str = r#"{"id":"33333333-3333-4333-8333-333333333333","email":"member@example.com","email_verified":true,"role":"payroll_operator"}"#;
 const OUTGOING_INVITATION: &str = r#"{"id":"44444444-4444-4444-8444-444444444444","email":"invitee@example.com","role":"payroll_operator","status":"pending","expires_at":"2026-09-11T12:00:00Z"}"#;
 const PENDING_INVITATION: &str = r#"{"id":"44444444-4444-4444-8444-444444444444","business_id":"22222222-2222-4222-8222-222222222222","business_name":"Example Ltd","invited_by_email":"admin@example.com","role":"payroll_operator","expires_at":"2026-09-11T12:00:00Z"}"#;
-const EMPLOYEE: &str = r#"{"id":"55555555-5555-4555-8555-555555555555","forenames":["Jamie","Lee"],"surname":"Morgan","created_at":"2026-09-04T12:00:00Z"}"#;
-const PAYE_SCHEME: &str = r#"{"id":"66666666-6666-4666-8666-666666666666","name":"Monthly payroll","employer_reference":"123/AB456","accounts_office_reference":"123PA00045678","created_at":"2026-09-04T12:00:00Z","tax_year_start":2026,"employment_allowance":"not_claiming"}"#;
-const EMPLOYMENT: &str = r#"{"id":"77777777-7777-4777-8777-777777777777","employee_id":"55555555-5555-4555-8555-555555555555","paye_scheme_id":"66666666-6666-4666-8666-666666666666","created_at":"2026-09-04T12:00:00Z","pay_schedule_id":"99999999-9999-4999-8999-999999999999","monthly_gross_pay_pence":300000,"start_date":"2026-09-01","ni_category":"A","tax_year_start":2026,"tax_code":"1257L","tax_basis":"cumulative","reporting_starter_declaration":"A","previous_employment":{"taxable_pay_pence":0,"tax_paid_pence":0},"starter_information":{"type":"checklist","declaration":"A"}}"#;
-const PAYROLL_RUN: &str = r#"{"id":"88888888-8888-4888-8888-888888888888","paye_scheme_id":"66666666-6666-4666-8666-666666666666","payment_date":"2026-09-30","status":"draft","employment_count":1,"finalized_at":null,"finalized_by_user_id":null,"created_at":"2026-09-04T12:00:00Z","pay_schedule_id":"99999999-9999-4999-8999-999999999999"}"#;
-const PAYROLL_RUN_DETAILS: &str = r#"{"id":"88888888-8888-4888-8888-888888888888","paye_scheme_id":"66666666-6666-4666-8666-666666666666","payment_date":"2026-09-30","status":"finalized","employment_count":1,"finalized_at":"2026-09-04T13:00:00Z","finalized_by_user_id":"33333333-3333-4333-8333-333333333333","created_at":"2026-09-04T12:00:00Z","employment_ids":["77777777-7777-4777-8777-777777777777"],"pay_schedule_id":"99999999-9999-4999-8999-999999999999","payments":[{"employment_id":"77777777-7777-4777-8777-777777777777","gross_pay_pence":300000}],"calculation":null}"#;
+const EMPLOYEE: &str = r#"{"id":"55555555-5555-4555-8555-555555555555","forenames":["Jamie","Lee"],"surname":"Morgan","created_at":"2026-09-04T12:00:00Z","title":null,"passport_number":null,"date_of_birth":"1985-05-05","sex":"M","address":{"type":"uk","lines":["1 Example Road"],"postcode":"SW1A 1AA"},"national_insurance_number":null}"#;
+const PAYE_SCHEME: &str = r#"{"id":"66666666-6666-4666-8666-666666666666","name":"Monthly payroll","employer_reference":"123/AB456","accounts_office_reference":"123PA00045678","created_at":"2026-09-04T12:00:00Z","tax_year_start":2026,"employment_allowance":"not_claiming","company_utr":null,"rollover_generation":0}"#;
+const EMPLOYMENT: &str = r#"{"id":"77777777-7777-4777-8777-777777777777","employee_id":"55555555-5555-4555-8555-555555555555","paye_scheme_id":"66666666-6666-4666-8666-666666666666","created_at":"2026-09-04T12:00:00Z","pay_schedule_id":"99999999-9999-4999-8999-999999999999","monthly_gross_pay_pence":300000,"start_date":"2026-09-01","ni_category":"A","tax_year_start":2026,"tax_code":"1257L","tax_basis":"cumulative","reporting_starter_declaration":"A","previous_employment":{"taxable_pay_pence":0,"tax_paid_pence":0},"starter_information":{"type":"checklist","declaration":"A"},"student_loan":"not_applicable","postgraduate_loan":"not_applicable","normal_weekly_hours_band":"thirty_or_more"}"#;
+const PAYROLL_RUN: &str = r#"{"id":"88888888-8888-4888-8888-888888888888","paye_scheme_id":"66666666-6666-4666-8666-666666666666","payment_date":"2026-09-30","status":"draft","employment_count":1,"finalized_at":null,"finalized_by_user_id":null,"created_at":"2026-09-04T12:00:00Z","pay_schedule_id":"99999999-9999-4999-8999-999999999999","version":0,"available_actions":[],"revision_id":null}"#;
+const PAYROLL_RUN_DETAILS: &str = r#"{"id":"88888888-8888-4888-8888-888888888888","paye_scheme_id":"66666666-6666-4666-8666-666666666666","payment_date":"2026-09-30","status":"accepted","employment_count":1,"finalized_at":"2026-09-04T13:00:00Z","finalized_by_user_id":"33333333-3333-4333-8333-333333333333","created_at":"2026-09-04T12:00:00Z","employment_ids":["77777777-7777-4777-8777-777777777777"],"pay_schedule_id":"99999999-9999-4999-8999-999999999999","payments":[{"employment_id":"77777777-7777-4777-8777-777777777777","gross_pay_pence":300000,"normal_weekly_hours_band":"thirty_or_more"}],"calculation":null,"version":0,"available_actions":[],"revision_id":null}"#;
 
 #[tokio::test]
 async fn client_covers_the_public_business_and_payroll_api() {
@@ -141,6 +145,15 @@ async fn client_covers_the_public_business_and_payroll_api() {
         .create_employee(
             business_id,
             &CreateEmployeeRequest {
+                title: None,
+                passport_number: None,
+                national_insurance_number: None,
+                date_of_birth: "1985-05-05".parse().unwrap(),
+                sex: EmployeeSex::Male,
+                address: EmployeeAddress::Uk {
+                    lines: vec!["1 Example Road".into()],
+                    postcode: "SW1A 1AA".into(),
+                },
                 forenames: EmployeeForenames::parse(vec!["Jamie".to_string(), "Lee".to_string()])
                     .unwrap(),
                 surname: EmployeeSurname::parse("Morgan").unwrap(),
@@ -157,6 +170,7 @@ async fn client_covers_the_public_business_and_payroll_api() {
             &UpdateEmployeeRequest {
                 forenames: None,
                 surname: Some(EmployeeSurname::parse("Taylor").unwrap()),
+                ..Default::default()
             },
         )
         .await
@@ -165,6 +179,7 @@ async fn client_covers_the_public_business_and_payroll_api() {
         .create_paye_scheme(
             business_id,
             &CreatePayeSchemeRequest {
+                company_utr: None,
                 name: PayeSchemeName::parse("Monthly payroll").unwrap(),
                 employer_reference: EmployerReference::parse("123/AB456").unwrap(),
                 accounts_office_reference: AccountsOfficeReference::parse("123PA00045678").unwrap(),
@@ -179,6 +194,9 @@ async fn client_covers_the_public_business_and_payroll_api() {
         .create_employment(
             business_id,
             &CreateEmploymentRequest {
+                student_loan: StudentLoan::NotApplicable,
+                postgraduate_loan: PostgraduateLoan::NotApplicable,
+                normal_weekly_hours_band: NormalWeeklyHoursBand::ThirtyOrMore,
                 employee_id,
                 paye_scheme_id,
                 pay_schedule_id: PayScheduleId::parse("99999999-9999-4999-8999-999999999999")
@@ -212,7 +230,7 @@ async fn client_covers_the_public_business_and_payroll_api() {
         .await
         .unwrap();
     client
-        .finalize_payroll_run(business_id, payroll_run_id)
+        .finalize_payroll_run(business_id, payroll_run_id, &finalize_request())
         .await
         .unwrap();
     client
@@ -250,6 +268,9 @@ async fn client_covers_the_public_business_and_payroll_api() {
         serde_json::json!({
             "forenames": ["Jamie", "Lee"],
             "surname": "Morgan",
+            "title":null,"passport_number":null,"national_insurance_number":null,
+            "date_of_birth":"1985-05-05","sex":"M",
+            "address":{"type":"uk","lines":["1 Example Road"],"postcode":"SW1A 1AA"},
         }),
     );
     assert_json_body(
@@ -261,7 +282,7 @@ async fn client_covers_the_public_business_and_payroll_api() {
     assert_json_body(
         &requests[16],
         serde_json::json!({
-            "name": "Monthly payroll",
+            "name": "Monthly payroll", "company_utr":null,
             "employer_reference": "123/AB456",
             "accounts_office_reference": "123PA00045678",
             "tax_year_start":2026, "employment_allowance":"not_claiming",
@@ -271,6 +292,7 @@ async fn client_covers_the_public_business_and_payroll_api() {
         &requests[18],
         serde_json::json!({
             "employee_id": "55555555-5555-4555-8555-555555555555",
+            "student_loan":"not_applicable","postgraduate_loan":"not_applicable","normal_weekly_hours_band":"thirty_or_more",
             "pay_schedule_id":"99999999-9999-4999-8999-999999999999",
             "monthly_gross_pay_pence":300000,"start_date":"2026-09-01","ni_category":"A",
             "starter_information":{"type":"checklist","declaration":"A"},
@@ -394,6 +416,7 @@ async fn billing_status_preserves_api_errors() {
             opsd::Error::Api {
                 status: actual,
                 problem,
+                ..
             } => {
                 assert_eq!(actual.as_u16(), status);
                 assert_eq!(problem.detail, "Access denied");
@@ -530,4 +553,22 @@ fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack
         .windows(needle.len())
         .position(|window| window == needle)
+}
+
+fn finalize_request() -> FinalizePayrollRunRequest {
+    FinalizePayrollRunRequest {
+        expected_version: 0,
+        sender_id: "test-sender".into(),
+        password: HmrcPassword::new("test-password"),
+        late_reporting_reason: None,
+    }
+}
+fn reporting_details() -> PracticeReportingDetails {
+    PracticeReportingDetails {
+        name: "Example practice".into(),
+        address: None,
+        contact_name: None,
+        email: None,
+        telephone: None,
+    }
 }

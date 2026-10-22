@@ -60,11 +60,12 @@ impl OpsdClient {
         decode_response(response).await
     }
 
-    /// Finalizes a payroll run and returns its captured employments.
+    /// Finalises and submits a run; inspect the returned state for its outcome.
     pub async fn finalize_payroll_run(
         &self,
         business_id: BusinessId,
         payroll_run_id: PayrollRunId,
+        request: &FinalizePayrollRunRequest,
     ) -> Result<FinalizePayrollRunResponse, Error> {
         let url = self.endpoint(&format!(
             "businesses/{business_id}/payroll-runs/{payroll_run_id}/finalize"
@@ -72,6 +73,7 @@ impl OpsdClient {
         let response = self
             .authenticate(self.http_client.post(url))
             .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
             .send()
             .await?;
 
@@ -169,5 +171,96 @@ impl OpsdClient {
             .send()
             .await?;
         expect_no_content(response).await
+    }
+}
+
+impl OpsdClient {
+    /// Retry a run using its expected version and available actions.
+    pub async fn retry_payroll_run(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+        request: &RetryPayrollRunRequest,
+    ) -> Result<GetPayrollRunResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/retry"
+        ));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Resume a run using its expected version and available actions.
+    pub async fn resume_payroll_run(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+        request: &ResumePayrollRunRequest,
+    ) -> Result<GetPayrollRunResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/resume"
+        ));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Reopen a run using its expected version and available actions.
+    pub async fn reopen_payroll_run(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+        request: &VersionedActionRequest,
+    ) -> Result<GetPayrollRunResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/reopen"
+        ));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Cancel a run using its expected version and available actions.
+    pub async fn cancel_payroll_run(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+        request: &VersionedActionRequest,
+    ) -> Result<GetPayrollRunResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/cancel"
+        ));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
+    }
+    /// Reads saved revisions, attempts and actions.
+    pub async fn get_payroll_run_history(
+        &self,
+        business_id: BusinessId,
+        payroll_run_id: PayrollRunId,
+    ) -> Result<PayrollRunHistoryResponse, Error> {
+        let url = self.endpoint(&format!(
+            "businesses/{business_id}/payroll-runs/{payroll_run_id}/history"
+        ));
+        let response = self
+            .authenticate(self.http_client.get(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .send()
+            .await?;
+        decode_response(response).await
     }
 }

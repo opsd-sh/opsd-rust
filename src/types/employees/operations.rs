@@ -10,17 +10,46 @@ use crate::types::{EmployeeId, ParseError};
     into = "wire::CreateEmployeeRequest"
 )]
 pub struct CreateEmployeeRequest {
+    pub title: Option<String>,
+    pub passport_number: Option<String>,
+    pub date_of_birth: crate::types::DateOfBirth,
+    pub sex: crate::types::EmployeeSex,
+    pub address: crate::types::EmployeeAddress,
+    pub national_insurance_number: Option<String>,
+
     pub forenames: EmployeeForenames,
     pub surname: EmployeeSurname,
 }
 
-/// Request accepted when changing an employee's name.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+/// Change employee details; the server enforces edits allowed by payroll history.
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(
     try_from = "wire::UpdateEmployeeRequest",
     into = "wire::UpdateEmployeeRequest"
 )]
 pub struct UpdateEmployeeRequest {
+    #[serde(
+        default,
+        skip_serializing_if = "crate::types::FieldUpdate::is_unchanged"
+    )]
+    pub title: crate::types::FieldUpdate<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::types::FieldUpdate::is_unchanged"
+    )]
+    pub passport_number: crate::types::FieldUpdate<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_of_birth: Option<crate::types::DateOfBirth>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sex: Option<crate::types::EmployeeSex>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<crate::types::EmployeeAddress>,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::types::FieldUpdate::is_unchanged"
+    )]
+    pub national_insurance_number: crate::types::FieldUpdate<String>,
+
     pub forenames: Option<EmployeeForenames>,
     pub surname: Option<EmployeeSurname>,
 }
@@ -77,6 +106,13 @@ impl TryFrom<wire::CreateEmployeeRequest> for CreateEmployeeRequest {
 
     fn try_from(value: wire::CreateEmployeeRequest) -> Result<Self, Self::Error> {
         Ok(Self {
+            title: value.title,
+            passport_number: value.passport_number,
+            date_of_birth: value.date_of_birth,
+            sex: value.sex,
+            address: value.address,
+            national_insurance_number: value.national_insurance_number,
+
             forenames: EmployeeForenames::parse(value.forenames)?,
             surname: EmployeeSurname::parse(&value.surname)?,
         })
@@ -86,6 +122,13 @@ impl TryFrom<wire::CreateEmployeeRequest> for CreateEmployeeRequest {
 impl From<CreateEmployeeRequest> for wire::CreateEmployeeRequest {
     fn from(value: CreateEmployeeRequest) -> Self {
         Self {
+            title: value.title,
+            passport_number: value.passport_number,
+            date_of_birth: value.date_of_birth,
+            sex: value.sex,
+            address: value.address,
+            national_insurance_number: value.national_insurance_number,
+
             forenames: value
                 .forenames
                 .as_slice()
@@ -102,6 +145,13 @@ impl TryFrom<wire::UpdateEmployeeRequest> for UpdateEmployeeRequest {
 
     fn try_from(value: wire::UpdateEmployeeRequest) -> Result<Self, Self::Error> {
         Ok(Self {
+            title: value.title,
+            passport_number: value.passport_number,
+            date_of_birth: value.date_of_birth,
+            sex: value.sex,
+            address: value.address,
+            national_insurance_number: value.national_insurance_number,
+
             forenames: value.forenames.map(EmployeeForenames::parse).transpose()?,
             surname: value
                 .surname
@@ -114,6 +164,13 @@ impl TryFrom<wire::UpdateEmployeeRequest> for UpdateEmployeeRequest {
 impl From<UpdateEmployeeRequest> for wire::UpdateEmployeeRequest {
     fn from(value: UpdateEmployeeRequest) -> Self {
         Self {
+            title: value.title,
+            passport_number: value.passport_number,
+            date_of_birth: value.date_of_birth,
+            sex: value.sex,
+            address: value.address,
+            national_insurance_number: value.national_insurance_number,
+
             forenames: value.forenames.map(|forenames| {
                 forenames
                     .as_slice()
@@ -128,6 +185,13 @@ impl From<UpdateEmployeeRequest> for wire::UpdateEmployeeRequest {
 
 fn employee_from_wire(value: wire::Employee) -> Result<Employee, ParseError> {
     Ok(Employee {
+        title: value.title,
+        passport_number: value.passport_number,
+        date_of_birth: value.date_of_birth,
+        sex: value.sex,
+        address: value.address,
+        national_insurance_number: value.national_insurance_number,
+
         id: EmployeeId::parse(&value.id)?,
         forenames: EmployeeForenames::parse(value.forenames)?,
         surname: EmployeeSurname::parse(&value.surname)?,
@@ -137,6 +201,13 @@ fn employee_from_wire(value: wire::Employee) -> Result<Employee, ParseError> {
 
 fn employee_into_wire(value: Employee) -> wire::Employee {
     wire::Employee {
+        title: value.title,
+        passport_number: value.passport_number,
+        date_of_birth: value.date_of_birth,
+        sex: value.sex,
+        address: value.address,
+        national_insurance_number: value.national_insurance_number,
+
         id: value.id.to_string(),
         forenames: value
             .forenames

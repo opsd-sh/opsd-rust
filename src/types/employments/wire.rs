@@ -3,6 +3,10 @@ use time::OffsetDateTime;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(super) struct CreateEmploymentRequest {
+    pub(super) student_loan: crate::types::StudentLoan,
+    pub(super) postgraduate_loan: crate::types::PostgraduateLoan,
+    pub(super) normal_weekly_hours_band: crate::types::NormalWeeklyHoursBand,
+
     pub(super) employee_id: String,
     pub(super) paye_scheme_id: String,
     pub(super) pay_schedule_id: String,
@@ -14,6 +18,9 @@ pub(super) struct CreateEmploymentRequest {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(super) struct Employment {
+    pub(super) student_loan: crate::types::StudentLoan,
+    pub(super) postgraduate_loan: crate::types::PostgraduateLoan,
+
     pub(super) id: String,
     pub(super) employee_id: String,
     pub(super) paye_scheme_id: String,

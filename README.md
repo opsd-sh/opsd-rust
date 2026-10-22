@@ -34,8 +34,9 @@ Standalone businesses use `subscribe_to_payroll`, `get_payroll_subscription`
 and `cancel_payroll_subscription`. Practice admins instead use
 `enable_practice_payroll`, `get_practice_payroll` and `disable_practice_payroll`
 with both practice and business IDs. Agreement status is separate from
-suspension; enabling or subscribing does not clear suspension or itself start
-billing.
+suspension. Enabling or subscribing starts monthly base fees without clearing
+suspension. Mutations take `PayrollSubscriptionAction` with `expected_version`
+from the status response’s `subscription_version`.
 
 Both payer types have billing-status, payment-method listing/default selection,
 invoice listing, detailed invoice lines and PDF-download methods. Practice
@@ -61,7 +62,10 @@ decision. Create a monthly schedule with `create_pay_schedule` before creating
 employments or draft runs; both requests require its `PayScheduleId`.
 
 New employments require a start date, NI category, monthly gross pay and
-`StarterInformation` (`P45`, `Checklist` or `NotProvided`). P45 tax details and
+`StarterInformation` (`P45`, `Checklist` or `NotProvided`), a
+`NormalWeeklyHoursBand`, and explicit `StudentLoan::NotApplicable` and
+`PostgraduateLoan::NotApplicable` declarations. Loan deductions are not yet
+supported; do not use these declarations where deductions apply. P45 tax details and
 HMRC notices use cumulative/non-cumulative enum variants so irrelevant amounts
 cannot accompany W1/M1 treatment. Amounts are sterling pence; tax amounts are
 signed to preserve refunds. Tax codes and year-specific HMRC rules are validated
@@ -86,13 +90,49 @@ and an explicit list of new-year notices (`[]` after checking none apply).
 The rollover contract includes opserver sending an end-of-year FPS for the
 closing year and an EPS declaring the Employment Allowance decision for the new
 year, alongside closing the old year and preparing new-year employment settings.
-Retry with the same request to resume an interrupted rollover. The response
-reports the rollover status returned by the server. The server currently supports
+Use `list_paye_scheme_rollovers` to recover a rollover ID after a lost response,
+then `get_paye_scheme_rollover` to inspect progress and `available_actions`.
+Use the explicit retry, resume or cancel methods with the saved version;
+repeating the start request is not a resume operation. The response reports
+separate final-FPS and new-year-EPS progress. The server currently supports
 2026–27 calculations and rollover rules; entering 2027–28 is not yet supported.
 
 These changes add required fields to the creation requests. Release the updated
 SDK before updating consumers that use the published crate. All payroll models
 remain available with `default-features = false`.
+
+## Current API changes in 0.4
+
+Employee creation requires date of birth, sex (`M` or `F`) and an address, in
+addition to names. Title, passport number and National Insurance number are
+optional. `UpdateEmployeeRequest` uses `FieldUpdate::Unchanged`, `::Set(value)`
+and `::Clear` for these nullable fields. Other omitted update fields retain
+their values. The server enforces HMRC validation and payroll-history edit rules.
+
+Practice creation requires `PracticeReportingDetails`. Read or replace them with
+`get_practice_hmrc_reporting` and `update_practice_hmrc_reporting`. Scheme creation
+also accepts an optional Corporation Tax `company_utr`.
+
+`finalize_payroll_run` takes `FinalizePayrollRunRequest`: the run's current
+`version`, Government Gateway sender ID and `HmrcPassword`, plus an optional
+late-reporting reason. Successful HTTP completion does not mean HMRC acceptance.
+`PayrollRunStatus::Finalized` carries submission progress; `::Accepted` establishes
+acceptance. Read `available_actions` before retrying, reopening, cancelling or
+resuming. Resuming polling requires only the version; reconciliation also needs
+the original sender's password. The client never retries these actions automatically.
+
+Rollover creation additionally requires `expected_generation` from the scheme's
+`rollover_generation`. Subsequent rollover actions take its own `version`.
+History methods return revisions, attempts, actions and safe diagnostic messages.
+An API conflict with an HMRC waiting period exposes `Error::retry_after_seconds()`.
+Re-read progress after a conflict or uncertain transport result; do not silently
+substitute a newer version and repeat an action.
+
+`HmrcPassword` redacts Debug output, but serialization exposes its value for the
+request. Do not log serialized credential-bearing requests. Credentials are not
+returned in progress or history responses. Automatic HTTP redirects are disabled
+to prevent forwarding credential-bearing request bodies; redirects are returned
+as errors for the caller to investigate.
 
 ## License
 

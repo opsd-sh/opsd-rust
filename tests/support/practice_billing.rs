@@ -1,3 +1,4 @@
+use super::reporting_details;
 use super::{MockResponse, MockServer, json, no_content};
 use opsd::{ApiCredential, Error, OpsdClient, types::*};
 use serde::{Serialize, de::DeserializeOwned};
@@ -69,6 +70,7 @@ async fn practice_lifecycle_uses_typed_models_and_correct_routes() {
     assert_eq!(
         client
             .create_practice(&CreatePracticeRequest {
+                hmrc_reporting: reporting_details(),
                 name: PracticeName::parse("Accountants").unwrap()
             })
             .await
@@ -168,7 +170,7 @@ async fn practice_lifecycle_uses_typed_models_and_correct_routes() {
         (
             "POST",
             "practices".into(),
-            Some(value!({"name":"Accountants"})),
+            Some(value!({"name":"Accountants","hmrc_reporting":reporting_details()})),
         ),
         ("GET", "practices".into(), None),
         ("GET", format!("practices/{pid}"), None),
@@ -205,15 +207,20 @@ async fn practice_lifecycle_uses_typed_models_and_correct_routes() {
 
 #[tokio::test]
 async fn agreements_keep_business_and_practice_routes_and_states_separate() {
-    let subscribed =
-        value!({"status":"subscribed","subscribed_at":DATE,"billing_start_month":null});
-    let enabled = value!({"status":"enabled","enabled_at":DATE,"billing_start_month":"2026-10","suspension":{"suspended_at":DATE}});
+    let subscribed = value!({"status":"subscribed","subscribed_at":DATE,"subscription_version":0});
+    let enabled = value!({"status":"enabled","enabled_at":DATE,"subscription_version":0,"suspension":{"suspended_at":DATE}});
     let server = MockServer::start(vec![
         json(200, &subscribed.to_string()),
-        json(200, r#"{"status":"never_subscribed","suspension":null}"#),
+        json(
+            200,
+            r#"{"status":"never_subscribed","subscription_version":0,"suspension":null}"#,
+        ),
         no_content(),
         json(200, &enabled.to_string()),
-        json(200, r#"{"status":"never_enabled","suspension":null}"#),
+        json(
+            200,
+            r#"{"status":"never_enabled","subscription_version":0,"suspension":null}"#,
+        ),
         no_content(),
         json(200, r#"{"payment_method_saved":false}"#),
     ]);
@@ -221,19 +228,47 @@ async fn agreements_keep_business_and_practice_routes_and_states_separate() {
     let bid = BusinessId::parse(BUSINESS).unwrap();
     let pid = PracticeId::parse(PRACTICE).unwrap();
     assert!(matches!(
-        client.subscribe_to_payroll(bid).await.unwrap(),
+        client
+            .subscribe_to_payroll(
+                bid,
+                &VersionedActionRequest {
+                    expected_version: 0
+                }
+            )
+            .await
+            .unwrap(),
         SubscribeToPayrollResponse::Subscribed {
-            billing_start_month: None,
+            subscription_version: 0,
             ..
         }
     ));
     assert!(matches!(
         client.get_payroll_subscription(bid).await.unwrap(),
-        GetPayrollSubscriptionResponse::NeverSubscribed { suspension: None }
+        GetPayrollSubscriptionResponse::NeverSubscribed {
+            suspension: None,
+            ..
+        }
     ));
-    client.cancel_payroll_subscription(bid).await.unwrap();
+    client
+        .cancel_payroll_subscription(
+            bid,
+            &VersionedActionRequest {
+                expected_version: 0,
+            },
+        )
+        .await
+        .unwrap();
     assert!(matches!(
-        client.enable_practice_payroll(pid, bid).await.unwrap(),
+        client
+            .enable_practice_payroll(
+                pid,
+                bid,
+                &VersionedActionRequest {
+                    expected_version: 0
+                }
+            )
+            .await
+            .unwrap(),
         PracticePayrollResponse::Enabled {
             suspension: Some(_),
             ..
@@ -241,9 +276,21 @@ async fn agreements_keep_business_and_practice_routes_and_states_separate() {
     ));
     assert!(matches!(
         client.get_practice_payroll(pid, bid).await.unwrap(),
-        PracticePayrollResponse::NeverEnabled { suspension: None }
+        PracticePayrollResponse::NeverEnabled {
+            suspension: None,
+            ..
+        }
     ));
-    client.disable_practice_payroll(pid, bid).await.unwrap();
+    client
+        .disable_practice_payroll(
+            pid,
+            bid,
+            &VersionedActionRequest {
+                expected_version: 0,
+            },
+        )
+        .await
+        .unwrap();
     assert!(
         !client
             .get_practice_billing_status(pid)
@@ -257,7 +304,7 @@ async fn agreements_keep_business_and_practice_routes_and_states_separate() {
             request,
             method,
             &format!("businesses/{bid}/payroll-subscription"),
-            None,
+            (method != "GET").then(|| value!({"expected_version":0})),
         );
     }
     for (request, method) in requests[3..6].iter().zip(["POST", "GET", "DELETE"]) {
@@ -265,7 +312,7 @@ async fn agreements_keep_business_and_practice_routes_and_states_separate() {
             request,
             method,
             &format!("practices/{pid}/businesses/{bid}/payroll"),
-            None,
+            (method != "GET").then(|| value!({"expected_version":0})),
         );
     }
     assert_request(
@@ -414,26 +461,26 @@ fn round_trip<T: Serialize + DeserializeOwned>(value: Value) {
 fn all_agreement_states_round_trip_with_and_without_suspension() {
     for suspension in [Value::Null, value!({"suspended_at":DATE})] {
         round_trip::<GetPayrollSubscriptionResponse>(
-            value!({"status":"never_subscribed","suspension":suspension}),
+            value!({"status":"never_subscribed","subscription_version":0,"suspension":suspension}),
         );
         round_trip::<PracticePayrollResponse>(
-            value!({"status":"never_enabled","suspension":suspension}),
+            value!({"status":"never_enabled","subscription_version":0,"suspension":suspension}),
         );
-        for month in [Value::Null, value!("2026-10")] {
+        {
             round_trip::<SubscribeToPayrollResponse>(
-                value!({"status":"subscribed","subscribed_at":DATE,"billing_start_month":month}),
+                value!({"status":"subscribed","subscribed_at":DATE,"subscription_version":0}),
             );
             round_trip::<GetPayrollSubscriptionResponse>(
-                value!({"status":"subscribed","subscribed_at":DATE,"billing_start_month":month,"suspension":suspension}),
+                value!({"status":"subscribed","subscribed_at":DATE,"subscription_version":0,"suspension":suspension}),
             );
             round_trip::<GetPayrollSubscriptionResponse>(
-                value!({"status":"cancelled","subscribed_at":DATE,"billing_start_month":month,"cancelled_at":DATE,"suspension":suspension}),
+                value!({"status":"cancelled","subscribed_at":DATE,"subscription_version":0,"cancelled_at":DATE,"suspension":suspension}),
             );
             round_trip::<PracticePayrollResponse>(
-                value!({"status":"enabled","enabled_at":DATE,"billing_start_month":month,"suspension":suspension}),
+                value!({"status":"enabled","enabled_at":DATE,"subscription_version":0,"suspension":suspension}),
             );
             round_trip::<PracticePayrollResponse>(
-                value!({"status":"disabled","enabled_at":DATE,"billing_start_month":month,"disabled_at":DATE,"suspension":suspension}),
+                value!({"status":"disabled","enabled_at":DATE,"subscription_version":0,"disabled_at":DATE,"suspension":suspension}),
             );
         }
     }
@@ -513,7 +560,13 @@ async fn api_errors_survive_json_empty_and_pdf_operations() {
         let errors = [
             client.get_practice(pid).await.unwrap_err(),
             client
-                .disable_practice_payroll(pid, BusinessId::parse(BUSINESS).unwrap())
+                .disable_practice_payroll(
+                    pid,
+                    BusinessId::parse(BUSINESS).unwrap(),
+                    &VersionedActionRequest {
+                        expected_version: 0,
+                    },
+                )
                 .await
                 .unwrap_err(),
             client
@@ -530,6 +583,7 @@ async fn api_errors_survive_json_empty_and_pdf_operations() {
                 Error::Api {
                     status: actual,
                     problem,
+                    ..
                 } => {
                     assert_eq!(actual.as_u16(), status);
                     assert_eq!(problem.detail, "Denied");

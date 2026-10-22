@@ -1,4 +1,3 @@
-use super::BillingMonth;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
@@ -9,16 +8,15 @@ pub struct PayrollSuspension {
     pub suspended_at: OffsetDateTime,
 }
 
-/// POST response. Subscribing alone does not start billing or clear suspension.
+/// POST response. Subscribing starts monthly base fees; suspension is independent.
 /// Use GET to read any independent suspension state.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum SubscribeToPayrollResponse {
     Subscribed {
+        subscription_version: u64,
         #[serde(with = "time::serde::rfc3339")]
         subscribed_at: OffsetDateTime,
-        /// Null before first billable payroll; otherwise YYYY-MM.
-        billing_start_month: Option<BillingMonth>,
     },
 }
 
@@ -28,18 +26,19 @@ pub enum SubscribeToPayrollResponse {
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum GetPayrollSubscriptionResponse {
     NeverSubscribed {
+        subscription_version: u64,
         suspension: Option<PayrollSuspension>,
     },
     Subscribed {
+        subscription_version: u64,
         #[serde(with = "time::serde::rfc3339")]
         subscribed_at: OffsetDateTime,
-        billing_start_month: Option<BillingMonth>,
         suspension: Option<PayrollSuspension>,
     },
     Cancelled {
+        subscription_version: u64,
         #[serde(with = "time::serde::rfc3339")]
         subscribed_at: OffsetDateTime,
-        billing_start_month: Option<BillingMonth>,
         #[serde(with = "time::serde::rfc3339")]
         cancelled_at: OffsetDateTime,
         suspension: Option<PayrollSuspension>,
@@ -47,25 +46,29 @@ pub enum GetPayrollSubscriptionResponse {
 }
 
 /// GET/POST client payroll response. Suspension applies to the whole practice;
-/// enabling one client does not start billing or restore a suspended practice.
+/// enabling a client starts monthly base fees without lifting suspension.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum PracticePayrollResponse {
     NeverEnabled {
+        subscription_version: u64,
         suspension: Option<PayrollSuspension>,
     },
     Enabled {
+        subscription_version: u64,
         #[serde(with = "time::serde::rfc3339")]
         enabled_at: OffsetDateTime,
-        billing_start_month: Option<BillingMonth>,
         suspension: Option<PayrollSuspension>,
     },
     Disabled {
+        subscription_version: u64,
         #[serde(with = "time::serde::rfc3339")]
         enabled_at: OffsetDateTime,
-        billing_start_month: Option<BillingMonth>,
         #[serde(with = "time::serde::rfc3339")]
         disabled_at: OffsetDateTime,
         suspension: Option<PayrollSuspension>,
     },
 }
+
+/// Version read from the subscription status; prevents stale enable/cancel actions.
+pub type PayrollSubscriptionAction = crate::types::VersionedActionRequest;

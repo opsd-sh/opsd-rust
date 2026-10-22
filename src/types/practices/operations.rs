@@ -7,22 +7,22 @@ use crate::types::{EmailAddress, ParseError, PracticeId, PracticeInvitationId, U
 /// Creates a new practice-owned business; does not link an existing business.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(
-    try_from = "wire::CreatePracticeRequest",
-    into = "wire::CreatePracticeRequest"
+    try_from = "wire::CreatePracticeBusinessRequest",
+    into = "wire::CreatePracticeBusinessRequest"
 )]
 pub struct CreatePracticeBusinessRequest {
     pub name: BusinessName,
 }
 
-impl TryFrom<wire::CreatePracticeRequest> for CreatePracticeBusinessRequest {
+impl TryFrom<wire::CreatePracticeBusinessRequest> for CreatePracticeBusinessRequest {
     type Error = ParseError;
-    fn try_from(value: wire::CreatePracticeRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: wire::CreatePracticeBusinessRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             name: BusinessName::parse(&value.name)?,
         })
     }
 }
-impl From<CreatePracticeBusinessRequest> for wire::CreatePracticeRequest {
+impl From<CreatePracticeBusinessRequest> for wire::CreatePracticeBusinessRequest {
     fn from(value: CreatePracticeBusinessRequest) -> Self {
         Self {
             name: value.name.to_string(),
@@ -100,6 +100,7 @@ impl From<ListPracticeBusinessesResponse> for Vec<wire::PracticeBusiness> {
     into = "wire::CreatePracticeRequest"
 )]
 pub struct CreatePracticeRequest {
+    pub hmrc_reporting: crate::types::PracticeReportingDetails,
     pub name: PracticeName,
 }
 
@@ -210,6 +211,7 @@ impl TryFrom<wire::CreatePracticeRequest> for CreatePracticeRequest {
 
     fn try_from(value: wire::CreatePracticeRequest) -> Result<Self, Self::Error> {
         Ok(Self {
+            hmrc_reporting: value.hmrc_reporting,
             name: PracticeName::parse(&value.name)?,
         })
     }
@@ -218,6 +220,7 @@ impl TryFrom<wire::CreatePracticeRequest> for CreatePracticeRequest {
 impl From<CreatePracticeRequest> for wire::CreatePracticeRequest {
     fn from(value: CreatePracticeRequest) -> Self {
         Self {
+            hmrc_reporting: value.hmrc_reporting,
             name: value.name.to_string(),
         }
     }
