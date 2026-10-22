@@ -8,7 +8,11 @@ fn calculation() -> serde_json::Value {
     let mut payment = amounts.clone();
     payment["employment_id"] = json!("77777777-7777-4777-8777-777777777777");
     payment["ytd"] = amounts.clone();
+    let bands = json!({"at_lel_pence":0,"above_lel_to_pt_pence":0,"above_pt_to_uel_pence":0});
+    payment["ni_earnings"] = bands.clone();
+    payment["ni_earnings_ytd"] = bands.clone();
     payment["inputs"] = json!({"tax_code":"NT","tax_basis":"non_cumulative","ni_category":"X","previous_employment_taxable_pay_pence":0,"previous_employment_tax_paid_pence":0,"previous_ytd":zero});
+    payment["inputs"]["previous_ni_earnings_ytd"] = bands;
     json!({"payroll_run_id":"88888888-8888-4888-8888-888888888888","payment_date":"2026-09-30","tax_year_start":2026,"tax_month":6,"payments":[payment],"totals":amounts})
 }
 
@@ -18,7 +22,7 @@ async fn payroll_client_preserves_settings_calculations_and_routes() {
     let preview = calculation();
     let mut saved: serde_json::Value = serde_json::from_str(PAYROLL_RUN_DETAILS).unwrap();
     saved["calculation"] = preview.clone();
-    let rollover = json!({"id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","from_tax_year_start":2025,"tax_year_start":2026,"employment_allowance":"not_claiming","status":"completed","tax_code_notices":[{"employment_id":"77777777-7777-4777-8777-777777777777","tax_code":"1257L","tax_basis":"cumulative"}]});
+    let rollover = json!({"id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","paye_scheme_id":"66666666-6666-4666-8666-666666666666","version":1,"created_at":"2026-09-04T12:00:00Z","from_tax_year_start":2025,"tax_year_start":2026,"employment_allowance":"not_claiming","status":"in_progress","progress":{"phase":"final_fps","final_fps":{"attempt_id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","attempt_count":1,"status":"pending","message":null}},"available_actions":[],"preparation_failure":null,"tax_code_notices":[{"employment_id":"77777777-7777-4777-8777-777777777777","tax_code":"1257L","tax_basis":"cumulative"}]});
     let server = MockServer::start(vec![
         json_response(201, &schedule),
         json_response(200, &json!([schedule])),
@@ -101,6 +105,7 @@ async fn payroll_client_preserves_settings_calculations_and_routes() {
                 },
                 monthly_gross_pay_pence: None,
                 ni_category: None,
+                normal_weekly_hours_band: None,
             }),
         )
         .await
@@ -114,7 +119,13 @@ async fn payroll_client_preserves_settings_calculations_and_routes() {
         saved
     );
     assert_eq!(
-        serde_json::to_value(client.finalize_payroll_run(business, run).await.unwrap()).unwrap(),
+        serde_json::to_value(
+            client
+                .finalize_payroll_run(business, run, &finalize_request())
+                .await
+                .unwrap()
+        )
+        .unwrap(),
         saved
     );
     client
@@ -122,7 +133,8 @@ async fn payroll_client_preserves_settings_calculations_and_routes() {
             business,
             run,
             employment,
-            &UpdatePayrollPaymentRequest {
+            &UpdatePayrollPaymentRequest::GrossPay {
+                normal_weekly_hours_band: None,
                 gross_pay_pence: NonNegativePence::new(150000).unwrap(),
             },
         )
@@ -130,6 +142,9 @@ async fn payroll_client_preserves_settings_calculations_and_routes() {
         .unwrap();
     client.discard_payroll_run(business, run).await.unwrap();
     let request = RolloverPayeSchemeRequest {
+        expected_generation: 0,
+        sender_id: "test-sender".into(),
+        password: HmrcPassword::new("test-password"),
         tax_year_start: 2026,
         employment_allowance: EmploymentAllowance::NotClaiming,
         tax_code_notices: vec![RolloverTaxCodeNotice {
@@ -213,6 +228,7 @@ fn starter_and_notice_inputs_encode_only_the_selected_route() {
         },
         monthly_gross_pay_pence: None,
         ni_category: None,
+        normal_weekly_hours_band: None,
     });
     assert_eq!(
         serde_json::to_value(notice).unwrap(),

@@ -3,6 +3,8 @@ use time::OffsetDateTime;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(super) struct CreatePayeSchemeRequest {
+    pub(super) company_utr: Option<String>,
+
     pub(super) name: String,
     pub(super) employer_reference: String,
     pub(super) accounts_office_reference: String,
@@ -12,6 +14,9 @@ pub(super) struct CreatePayeSchemeRequest {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(super) struct PayeScheme {
+    pub(super) company_utr: Option<String>,
+    pub(super) rollover_generation: u64,
+
     pub(super) id: String,
     pub(super) name: String,
     pub(super) employer_reference: String,

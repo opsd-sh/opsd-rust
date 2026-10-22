@@ -31,14 +31,21 @@ impl OpsdClient {
             .await
     }
 
-    /// Starts or resumes a standalone payroll agreement. This alone does not
-    /// start billing or clear an overdue-invoice suspension.
+    /// Starts or resumes a payroll subscription and monthly base fees.
+    /// Does not clear an overdue-invoice suspension.
     pub async fn subscribe_to_payroll(
         &self,
         business_id: BusinessId,
+        request: &PayrollSubscriptionAction,
     ) -> Result<SubscribeToPayrollResponse, Error> {
-        self.billing_post(&format!("businesses/{business_id}/payroll-subscription"))
-            .await
+        let url = self.endpoint(&format!("businesses/{business_id}/payroll-subscription"));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
     }
 
     /// Reads agreement status and independent suspension for a standalone payer.
@@ -54,9 +61,19 @@ impl OpsdClient {
     }
 
     /// Cancels a standalone agreement without clearing outstanding charges.
-    pub async fn cancel_payroll_subscription(&self, business_id: BusinessId) -> Result<(), Error> {
-        self.billing_delete(&format!("businesses/{business_id}/payroll-subscription"))
-            .await
+    pub async fn cancel_payroll_subscription(
+        &self,
+        business_id: BusinessId,
+        request: &PayrollSubscriptionAction,
+    ) -> Result<(), Error> {
+        let url = self.endpoint(&format!("businesses/{business_id}/payroll-subscription"));
+        let response = self
+            .authenticate(self.http_client.delete(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        expect_no_content(response).await
     }
 
     /// Enables payroll for a practice-owned client. Does not lift suspension.
@@ -64,11 +81,18 @@ impl OpsdClient {
         &self,
         practice_id: PracticeId,
         business_id: BusinessId,
+        request: &PayrollSubscriptionAction,
     ) -> Result<PracticePayrollResponse, Error> {
-        self.billing_post(&format!(
+        let url = self.endpoint(&format!(
             "practices/{practice_id}/businesses/{business_id}/payroll"
-        ))
-        .await
+        ));
+        let response = self
+            .authenticate(self.http_client.post(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        decode_response(response).await
     }
 
     /// Reads client payroll status, including any practice-wide suspension.
@@ -89,11 +113,18 @@ impl OpsdClient {
         &self,
         practice_id: PracticeId,
         business_id: BusinessId,
+        request: &PayrollSubscriptionAction,
     ) -> Result<(), Error> {
-        self.billing_delete(&format!(
+        let url = self.endpoint(&format!(
             "practices/{practice_id}/businesses/{business_id}/payroll"
-        ))
-        .await
+        ));
+        let response = self
+            .authenticate(self.http_client.delete(url))
+            .header(ACCEPT, ACCEPT_JSON.clone())
+            .json(request)
+            .send()
+            .await?;
+        expect_no_content(response).await
     }
 
     /// Lists the standalone payer's live saved payment methods.
@@ -242,24 +273,6 @@ impl OpsdClient {
         decode_response(response).await
     }
 
-    async fn billing_post<T: DeserializeOwned>(&self, path: &str) -> Result<T, Error> {
-        let response = self
-            .authenticate(self.http_client.post(self.endpoint(path)))
-            .header(ACCEPT, ACCEPT_JSON.clone())
-            .send()
-            .await?;
-        decode_response(response).await
-    }
-
-    async fn billing_delete(&self, path: &str) -> Result<(), Error> {
-        let response = self
-            .authenticate(self.http_client.delete(self.endpoint(path)))
-            .header(ACCEPT, ACCEPT_JSON.clone())
-            .send()
-            .await?;
-        expect_no_content(response).await
-    }
-
     async fn billing_put<T: Serialize + ?Sized>(&self, path: &str, body: &T) -> Result<(), Error> {
         let response = self
             .authenticate(self.http_client.request(Method::PUT, self.endpoint(path)))
@@ -291,7 +304,7 @@ impl OpsdClient {
             });
         let body = response.bytes().await?;
         if !status.is_success() {
-            return Err(decode_error(status, &body));
+            return Err(decode_error(status, &body, None));
         }
         if status != reqwest::StatusCode::OK || !is_pdf || !body.starts_with(b"%PDF-") {
             return Err(Error::UnexpectedResponse {

@@ -5,8 +5,9 @@ use crate::types::{
 use serde::{Deserialize, Serialize};
 /// Stored employment defaults and the scheme's active-year tax settings.
 /// Null fields preserve incomplete legacy records; creating a new employment requires complete inputs.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmploymentPayrollSettings {
+    pub normal_weekly_hours_band: crate::types::NormalWeeklyHoursBand,
     pub monthly_gross_pay_pence: Option<NonNegativePence>,
     pub start_date: Option<EmploymentDate>,
     pub tax_code: Option<String>,
@@ -23,6 +24,8 @@ pub struct EmploymentPayrollSettings {
 #[serde(deny_unknown_fields)]
 pub struct UpdateEmploymentSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub normal_weekly_hours_band: Option<crate::types::NormalWeeklyHoursBand>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub monthly_gross_pay_pence: Option<NonNegativePence>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_date: Option<EmploymentDate>,
@@ -35,6 +38,8 @@ pub struct UpdateEmploymentSettings {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ApplyEmploymentTaxCodeNotice {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub normal_weekly_hours_band: Option<crate::types::NormalWeeklyHoursBand>,
     pub tax_code_notice: TaxCodeNotice,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub monthly_gross_pay_pence: Option<NonNegativePence>,

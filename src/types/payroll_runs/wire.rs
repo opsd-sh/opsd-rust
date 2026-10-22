@@ -14,7 +14,13 @@ pub(super) struct PayrollRun {
     pub(super) paye_scheme_id: String,
     pub(super) pay_schedule_id: String,
     pub(super) payment_date: String,
-    pub(super) status: String,
+    #[serde(flatten)]
+    pub(super) status: super::PayrollRunStatus,
+    pub(super) version: u64,
+    pub(super) available_actions: Vec<crate::types::SubmissionAction>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) preparation_failure: Option<String>,
+    pub(super) revision_id: Option<crate::types::PayrollRevisionId>,
     pub(super) employment_count: u64,
     #[serde(with = "time::serde::rfc3339::option")]
     pub(super) finalized_at: Option<OffsetDateTime>,

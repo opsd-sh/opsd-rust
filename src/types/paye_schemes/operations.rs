@@ -10,6 +10,8 @@ use crate::types::{ParseError, PayeSchemeId};
     into = "wire::CreatePayeSchemeRequest"
 )]
 pub struct CreatePayeSchemeRequest {
+    pub company_utr: Option<String>,
+
     pub name: PayeSchemeName,
     pub employer_reference: EmployerReference,
     pub accounts_office_reference: AccountsOfficeReference,
@@ -36,6 +38,7 @@ impl TryFrom<wire::CreatePayeSchemeRequest> for CreatePayeSchemeRequest {
 
     fn try_from(value: wire::CreatePayeSchemeRequest) -> Result<Self, Self::Error> {
         Ok(Self {
+            company_utr: value.company_utr,
             tax_year_start: value.tax_year_start,
             employment_allowance: value.employment_allowance,
             name: PayeSchemeName::parse(&value.name)?,
@@ -50,6 +53,7 @@ impl TryFrom<wire::CreatePayeSchemeRequest> for CreatePayeSchemeRequest {
 impl From<CreatePayeSchemeRequest> for wire::CreatePayeSchemeRequest {
     fn from(value: CreatePayeSchemeRequest) -> Self {
         Self {
+            company_utr: value.company_utr,
             tax_year_start: value.tax_year_start,
             employment_allowance: value.employment_allowance,
             name: value.name.to_string(),
@@ -61,6 +65,8 @@ impl From<CreatePayeSchemeRequest> for wire::CreatePayeSchemeRequest {
 
 fn scheme_from_wire(value: wire::PayeScheme) -> Result<PayeScheme, ParseError> {
     Ok(PayeScheme {
+        company_utr: value.company_utr,
+        rollover_generation: value.rollover_generation,
         id: PayeSchemeId::parse(&value.id)?,
         name: PayeSchemeName::parse(&value.name)?,
         employer_reference: EmployerReference::parse(&value.employer_reference)?,
@@ -75,6 +81,8 @@ fn scheme_from_wire(value: wire::PayeScheme) -> Result<PayeScheme, ParseError> {
 
 fn scheme_into_wire(value: PayeScheme) -> wire::PayeScheme {
     wire::PayeScheme {
+        company_utr: value.company_utr,
+        rollover_generation: value.rollover_generation,
         id: value.id.to_string(),
         name: value.name.to_string(),
         employer_reference: value.employer_reference.to_string(),

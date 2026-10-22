@@ -71,44 +71,18 @@ impl fmt::Display for PayrollPaymentDate {
     }
 }
 
-/// Lifecycle state of a payroll run.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Durable payroll lifecycle. Finalized does not mean HMRC has accepted it.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
 pub enum PayrollRunStatus {
     Draft,
-    Finalized,
+    Reopened,
+    Cancelled,
+    Accepted,
+    Finalized {
+        submission: crate::types::SubmissionProgress,
+    },
 }
-
-impl PayrollRunStatus {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Draft => "draft",
-            Self::Finalized => "finalized",
-        }
-    }
-
-    pub fn parse(value: &str) -> Result<Self, ParseError> {
-        match value {
-            "draft" => Ok(Self::Draft),
-            "finalized" => Ok(Self::Finalized),
-            _ => Err(ParseError::new("payroll run status is invalid")),
-        }
-    }
-}
-
-impl FromStr for PayrollRunStatus {
-    type Err = ParseError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::parse(value)
-    }
-}
-
-impl fmt::Display for PayrollRunStatus {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
-    }
-}
-
 /// Payroll run for a PAYE scheme and contractual payment date.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PayrollRun {
@@ -117,6 +91,10 @@ pub struct PayrollRun {
     pub pay_schedule_id: crate::types::PayScheduleId,
     pub payment_date: PayrollPaymentDate,
     pub status: PayrollRunStatus,
+    pub version: u64,
+    pub available_actions: Vec<crate::types::SubmissionAction>,
+    pub preparation_failure: Option<String>,
+    pub revision_id: Option<crate::types::PayrollRevisionId>,
     pub employment_count: u64,
     pub finalized_at: Option<OffsetDateTime>,
     pub finalized_by_user_id: Option<UserId>,
@@ -134,7 +112,7 @@ pub struct PayrollRunDetails {
 
 #[cfg(test)]
 mod tests {
-    use super::{PayrollPaymentDate, PayrollRunStatus};
+    use super::PayrollPaymentDate;
 
     #[test]
     fn payment_dates_require_valid_iso_calendar_dates() {
@@ -144,18 +122,5 @@ mod tests {
         );
         assert!(PayrollPaymentDate::parse("2026-02-29").is_err());
         assert!(PayrollPaymentDate::parse("30-09-2026").is_err());
-    }
-
-    #[test]
-    fn payroll_run_statuses_parse_from_the_api_values() {
-        assert_eq!(
-            PayrollRunStatus::parse("draft").unwrap(),
-            PayrollRunStatus::Draft
-        );
-        assert_eq!(
-            PayrollRunStatus::parse("finalized").unwrap(),
-            PayrollRunStatus::Finalized
-        );
-        assert!(PayrollRunStatus::parse("submitted").is_err());
     }
 }

@@ -87,6 +87,13 @@ impl EmployeeForenames {
 /// Employee belonging to a business.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Employee {
+    pub title: Option<String>,
+    pub passport_number: Option<String>,
+    pub date_of_birth: crate::types::DateOfBirth,
+    pub sex: crate::types::EmployeeSex,
+    pub address: crate::types::EmployeeAddress,
+    pub national_insurance_number: Option<String>,
+
     pub id: EmployeeId,
     pub forenames: EmployeeForenames,
     pub surname: EmployeeSurname,

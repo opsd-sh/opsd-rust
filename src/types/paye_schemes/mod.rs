@@ -8,3 +8,6 @@ pub use rollover::*;
 
 pub use domain::*;
 pub use operations::*;
+
+mod history;
+pub use history::*;

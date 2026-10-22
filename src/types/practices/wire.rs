@@ -10,6 +10,7 @@ pub(super) struct PracticeBusiness {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(super) struct CreatePracticeRequest {
+    pub(super) hmrc_reporting: crate::types::PracticeReportingDetails,
     pub(super) name: String,
 }
 
@@ -58,4 +59,9 @@ pub(super) struct PendingPracticeInvitation {
     pub(super) role: String,
     #[serde(with = "time::serde::rfc3339")]
     pub(super) expires_at: OffsetDateTime,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub(super) struct CreatePracticeBusinessRequest {
+    pub(super) name: String,
 }

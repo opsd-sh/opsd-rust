@@ -69,6 +69,9 @@ paye_text!(
 /// PAYE scheme belonging to a business.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PayeScheme {
+    pub company_utr: Option<String>,
+    pub rollover_generation: u64,
+
     pub id: PayeSchemeId,
     pub name: PayeSchemeName,
     pub employer_reference: EmployerReference,

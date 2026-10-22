@@ -10,6 +10,10 @@ use crate::types::{EmployeeId, EmploymentId, ParseError, PayeSchemeId};
     into = "wire::CreateEmploymentRequest"
 )]
 pub struct CreateEmploymentRequest {
+    pub student_loan: crate::types::StudentLoan,
+    pub postgraduate_loan: crate::types::PostgraduateLoan,
+    pub normal_weekly_hours_band: crate::types::NormalWeeklyHoursBand,
+
     pub employee_id: EmployeeId,
     pub paye_scheme_id: PayeSchemeId,
     pub pay_schedule_id: crate::types::PayScheduleId,
@@ -36,9 +40,12 @@ pub struct ListEmploymentsResponse {
 impl From<CreateEmploymentRequest> for wire::CreateEmploymentRequest {
     fn from(value: CreateEmploymentRequest) -> Self {
         Self {
+            student_loan: value.student_loan,
+            postgraduate_loan: value.postgraduate_loan,
             employee_id: value.employee_id.to_string(),
             paye_scheme_id: value.paye_scheme_id.to_string(),
             pay_schedule_id: value.pay_schedule_id.to_string(),
+            normal_weekly_hours_band: value.normal_weekly_hours_band,
             monthly_gross_pay_pence: value.monthly_gross_pay_pence,
             start_date: value.start_date,
             ni_category: value.ni_category,
@@ -52,9 +59,12 @@ impl TryFrom<wire::CreateEmploymentRequest> for CreateEmploymentRequest {
 
     fn try_from(value: wire::CreateEmploymentRequest) -> Result<Self, Self::Error> {
         Ok(Self {
+            student_loan: value.student_loan,
+            postgraduate_loan: value.postgraduate_loan,
             employee_id: EmployeeId::parse(&value.employee_id)?,
             paye_scheme_id: PayeSchemeId::parse(&value.paye_scheme_id)?,
             pay_schedule_id: crate::types::PayScheduleId::parse(&value.pay_schedule_id)?,
+            normal_weekly_hours_band: value.normal_weekly_hours_band,
             monthly_gross_pay_pence: value.monthly_gross_pay_pence,
             start_date: value.start_date,
             ni_category: value.ni_category,
@@ -66,6 +76,8 @@ impl TryFrom<wire::CreateEmploymentRequest> for CreateEmploymentRequest {
 fn employment_from_wire(value: wire::Employment) -> Result<Employment, ParseError> {
     Ok(Employment {
         id: EmploymentId::parse(&value.id)?,
+        student_loan: value.student_loan,
+        postgraduate_loan: value.postgraduate_loan,
         employee_id: EmployeeId::parse(&value.employee_id)?,
         paye_scheme_id: PayeSchemeId::parse(&value.paye_scheme_id)?,
         pay_schedule_id: crate::types::PayScheduleId::parse(&value.pay_schedule_id)?,
@@ -77,6 +89,8 @@ fn employment_from_wire(value: wire::Employment) -> Result<Employment, ParseErro
 fn employment_into_wire(value: Employment) -> wire::Employment {
     wire::Employment {
         id: value.id.to_string(),
+        student_loan: value.student_loan,
+        postgraduate_loan: value.postgraduate_loan,
         employee_id: value.employee_id.to_string(),
         paye_scheme_id: value.paye_scheme_id.to_string(),
         pay_schedule_id: value.pay_schedule_id.to_string(),

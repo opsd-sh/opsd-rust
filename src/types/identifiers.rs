@@ -121,3 +121,12 @@ mod tests {
         assert!(BusinessId::from_str("not-a-uuid").is_err());
     }
 }
+
+uuid_identifier!(
+    /// Public identifier of a submission attempt.
+    SubmissionAttemptId, "submission attempt ID must be a UUID"
+);
+uuid_identifier!(
+    /// Public identifier of a frozen payroll revision.
+    PayrollRevisionId, "payroll revision ID must be a UUID"
+);
