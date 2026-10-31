@@ -303,16 +303,30 @@ async fn agreements_keep_business_and_practice_routes_and_states_separate() {
         assert_request(
             request,
             method,
-            &format!("businesses/{bid}/payroll-subscription"),
-            (method != "GET").then(|| value!({"expected_version":0})),
+            &format!(
+                "businesses/{bid}/payroll-subscription{}",
+                if method == "GET" {
+                    ""
+                } else {
+                    "?expected_version=0"
+                }
+            ),
+            None,
         );
     }
     for (request, method) in requests[3..6].iter().zip(["POST", "GET", "DELETE"]) {
         assert_request(
             request,
             method,
-            &format!("practices/{pid}/businesses/{bid}/payroll"),
-            (method != "GET").then(|| value!({"expected_version":0})),
+            &format!(
+                "practices/{pid}/businesses/{bid}/payroll{}",
+                if method == "GET" {
+                    ""
+                } else {
+                    "?expected_version=0"
+                }
+            ),
+            None,
         );
     }
     assert_request(
