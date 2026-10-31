@@ -42,7 +42,7 @@ impl OpsdClient {
         let response = self
             .authenticate(self.http_client.post(url))
             .header(ACCEPT, ACCEPT_JSON.clone())
-            .json(request)
+            .query(request)
             .send()
             .await?;
         decode_response(response).await
@@ -70,7 +70,7 @@ impl OpsdClient {
         let response = self
             .authenticate(self.http_client.delete(url))
             .header(ACCEPT, ACCEPT_JSON.clone())
-            .json(request)
+            .query(request)
             .send()
             .await?;
         expect_no_content(response).await
@@ -89,7 +89,7 @@ impl OpsdClient {
         let response = self
             .authenticate(self.http_client.post(url))
             .header(ACCEPT, ACCEPT_JSON.clone())
-            .json(request)
+            .query(request)
             .send()
             .await?;
         decode_response(response).await
@@ -121,7 +121,7 @@ impl OpsdClient {
         let response = self
             .authenticate(self.http_client.delete(url))
             .header(ACCEPT, ACCEPT_JSON.clone())
-            .json(request)
+            .query(request)
             .send()
             .await?;
         expect_no_content(response).await
