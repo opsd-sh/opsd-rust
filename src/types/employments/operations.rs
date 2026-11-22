@@ -19,6 +19,8 @@ pub struct CreateEmploymentRequest {
     pub pay_schedule_id: crate::types::PayScheduleId,
     pub monthly_gross_pay_pence: crate::types::NonNegativePence,
     pub start_date: crate::types::EmploymentDate,
+    /// Omit for ordinary NI.
+    pub ni_method: Option<super::EmploymentNiMethod>,
     pub ni_category: crate::types::NiCategory,
     pub starter_information: crate::types::StarterInformation,
 }
@@ -48,6 +50,7 @@ impl From<CreateEmploymentRequest> for wire::CreateEmploymentRequest {
             normal_weekly_hours_band: value.normal_weekly_hours_band,
             monthly_gross_pay_pence: value.monthly_gross_pay_pence,
             start_date: value.start_date,
+            ni_method: value.ni_method,
             ni_category: value.ni_category,
             starter_information: value.starter_information,
         }
@@ -67,6 +70,7 @@ impl TryFrom<wire::CreateEmploymentRequest> for CreateEmploymentRequest {
             normal_weekly_hours_band: value.normal_weekly_hours_band,
             monthly_gross_pay_pence: value.monthly_gross_pay_pence,
             start_date: value.start_date,
+            ni_method: value.ni_method,
             ni_category: value.ni_category,
             starter_information: value.starter_information,
         })

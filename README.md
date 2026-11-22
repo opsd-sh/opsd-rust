@@ -71,6 +71,14 @@ cannot accompany W1/M1 treatment. Amounts are sterling pence; tax amounts are
 signed to preserve refunds. Tax codes and year-specific HMRC rules are validated
 by the server; this public library has no dependency on HMRC calculation crates.
 
+For an AL director, set `ni_method` to `Some(EmploymentNiMethod::DirectorAlternative { appointed_on })`
+and supply the NI category separately. On creation, `None` selects ordinary NI.
+On update, `None` preserves the method and `Some(EmploymentNiMethod::Ordinary {})`
+requests ordinary NI. Use `UpdatePayrollPaymentRequest::DirectorPayment` to
+mark a regular (`false`) or final (`true`) payday with or without a pay or hours edit.
+Read `inputs.annual_director_ni`, the employee NI deducted from pay, the
+employer-funded portion and any payroll warnings in the preview or saved calculation.
+
 `get_employment` returns the original starter evidence and active-year tax
 settings. `update_employment` accepts `UpdateEmploymentRequest::Settings` or
 `::TaxCodeNotice`; notice updates cannot also contain starter changes. For a

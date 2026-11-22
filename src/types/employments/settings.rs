@@ -3,6 +3,17 @@ use crate::types::{
     StarterInformation, TaxBasis, TaxCodeNotice,
 };
 use serde::{Deserialize, Serialize};
+
+/// NI calculation method on an employment, independent of its NI category letter.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "method", deny_unknown_fields)]
+pub enum EmploymentNiMethod {
+    #[serde(rename = "ordinary")]
+    Ordinary {},
+    #[serde(rename = "AL")]
+    DirectorAlternative { appointed_on: EmploymentDate },
+}
+
 /// Stored employment defaults and the scheme's active-year tax settings.
 /// Null fields preserve incomplete legacy records; creating a new employment requires complete inputs.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -15,6 +26,9 @@ pub struct EmploymentPayrollSettings {
     pub tax_year_start: Option<i32>,
     pub reporting_starter_declaration: Option<StarterDeclaration>,
     pub previous_employment: Option<PreviousEmploymentAmounts>,
+    /// Older servers omit the NI method.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ni_method: Option<EmploymentNiMethod>,
     pub ni_category: Option<NiCategory>,
     pub starter_information: Option<StarterInformation>,
 }
@@ -29,6 +43,8 @@ pub struct UpdateEmploymentSettings {
     pub monthly_gross_pay_pence: Option<NonNegativePence>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_date: Option<EmploymentDate>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ni_method: Option<EmploymentNiMethod>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ni_category: Option<NiCategory>,
     #[serde(skip_serializing_if = "Option::is_none")]
