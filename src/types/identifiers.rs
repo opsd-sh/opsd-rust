@@ -124,9 +124,11 @@ mod tests {
 
 uuid_identifier!(
     /// Public identifier of a submission attempt.
-    SubmissionAttemptId, "submission attempt ID must be a UUID"
+    SubmissionAttemptId,
+    "submission attempt ID must be a UUID"
 );
 uuid_identifier!(
     /// Public identifier of a frozen payroll revision.
-    PayrollRevisionId, "payroll revision ID must be a UUID"
+    PayrollRevisionId,
+    "payroll revision ID must be a UUID"
 );
