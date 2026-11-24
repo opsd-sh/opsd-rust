@@ -16,6 +16,54 @@ fn calculation() -> serde_json::Value {
     json!({"payroll_run_id":"88888888-8888-4888-8888-888888888888","payment_date":"2026-09-30","tax_year_start":2026,"tax_month":6,"payments":[payment],"totals":amounts})
 }
 
+#[test]
+fn director_ni_wire_shapes_preserve_method_decision_and_refunds() {
+    for method in [
+        json!({"method":"ordinary"}),
+        json!({"method":"AL","appointed_on":"2025-04-06"}),
+    ] {
+        let parsed: EmploymentNiMethod = serde_json::from_value(method.clone()).unwrap();
+        assert_eq!(serde_json::to_value(parsed).unwrap(), method);
+    }
+    for invalid in [
+        json!({"method":"AN"}),
+        json!({"method":"AL"}),
+        json!({"method":"AL","appointed_on":"2026-02-30"}),
+        json!({"method":"ordinary","appointed_on":"2025-04-06"}),
+    ] {
+        assert!(serde_json::from_value::<EmploymentNiMethod>(invalid).is_err());
+    }
+    for edit in [
+        json!({"final_director_payment":false}),
+        json!({"final_director_payment":true,"gross_pay_pence":0,"normal_weekly_hours_band":"other"}),
+    ] {
+        let parsed: UpdatePayrollPaymentRequest = serde_json::from_value(edit.clone()).unwrap();
+        assert_eq!(serde_json::to_value(parsed).unwrap(), edit);
+    }
+    for invalid in [
+        json!({}),
+        json!({"final_director_payment":null}),
+        json!({"final_director_payment":"false"}),
+        json!({"final_director_payment":false,"gross_pay_pence":null}),
+        json!({"final_director_payment":true,"normal_weekly_hours_band":null}),
+    ] {
+        assert!(serde_json::from_value::<UpdatePayrollPaymentRequest>(invalid).is_err());
+    }
+    let mut preview = calculation();
+    let legacy: PayrollPreviewResponse = serde_json::from_value(preview.clone()).unwrap();
+    assert_eq!(serde_json::to_value(legacy).unwrap(), preview);
+    preview["warnings"] = json!([]);
+    let payment = &mut preview["payments"][0];
+    payment["inputs"]["ni_method"] = json!({"method":"AL","appointed_on":"2025-04-06"});
+    payment["inputs"]["annual_director_ni"] = json!(true);
+    payment["employee_ni_pence"] = json!(-4536);
+    payment["employee_ni_deducted_pence"] = json!(-4536);
+    payment["employer_funded_employee_ni_pence"] = json!(0);
+    let parsed: PayrollPreviewResponse = serde_json::from_value(preview.clone()).unwrap();
+    assert_eq!(parsed.payments[0].employee_ni_deducted_pence, Some(-4536));
+    assert_eq!(serde_json::to_value(parsed).unwrap(), preview);
+}
+
 #[tokio::test]
 async fn payroll_client_preserves_settings_calculations_and_routes() {
     let schedule = json!({"id":"99999999-9999-4999-8999-999999999999","paye_scheme_id":"66666666-6666-4666-8666-666666666666","name":"Monthly staff","frequency":"monthly","created_at":"2026-09-04T12:00:00Z"});

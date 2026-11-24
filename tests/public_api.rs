@@ -203,6 +203,7 @@ async fn client_covers_the_public_business_and_payroll_api() {
                     .unwrap(),
                 monthly_gross_pay_pence: NonNegativePence::new(300000).unwrap(),
                 start_date: EmploymentDate::parse("2026-09-01").unwrap(),
+                ni_method: None,
                 ni_category: NiCategory::A,
                 starter_information: StarterInformation::Checklist {
                     declaration: StarterDeclaration::A,

@@ -12,6 +12,8 @@ pub(super) struct CreateEmploymentRequest {
     pub(super) pay_schedule_id: String,
     pub(super) monthly_gross_pay_pence: crate::types::NonNegativePence,
     pub(super) start_date: crate::types::EmploymentDate,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) ni_method: Option<super::EmploymentNiMethod>,
     pub(super) ni_category: crate::types::NiCategory,
     pub(super) starter_information: crate::types::StarterInformation,
 }
