@@ -39,7 +39,8 @@ jobs:
           --component clippy,rustfmt
 
       - name: Check formatting
-        run: cargo +${{ matrix.rust }} fmt --check
+        if: matrix.rust == '1.86.0'
+        run: cargo fmt --check
 
       - name: Run tests
         run: cargo +${{ matrix.rust }} test --locked --all-features
