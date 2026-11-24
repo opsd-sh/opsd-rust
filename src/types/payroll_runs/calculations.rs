@@ -50,6 +50,10 @@ fn supplied<'de, T: Deserialize<'de>, D: serde::Deserializer<'de>>(
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PaymentAmounts {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub taxable_pay_pence: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ni_gross_pence: Option<i64>,
     pub gross_pay_pence: i64,
     pub income_tax_pence: i64,
     pub employee_ni_pence: i64,

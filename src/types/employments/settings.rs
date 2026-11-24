@@ -18,6 +18,10 @@ pub enum EmploymentNiMethod {
 /// Null fields preserve incomplete legacy records; creating a new employment requires complete inputs.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmploymentPayrollSettings {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payroll_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_external_payment_date: Option<EmploymentDate>,
     pub normal_weekly_hours_band: crate::types::NormalWeeklyHoursBand,
     pub monthly_gross_pay_pence: Option<NonNegativePence>,
     pub start_date: Option<EmploymentDate>,
