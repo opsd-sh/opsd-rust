@@ -55,6 +55,15 @@ Website billing-portal sessions use browser cookies, not API credentials, and
 are intentionally not included. All public models remain available with
 `default-features = false` when only API types are needed.
 
+## Payslip downloads
+
+For an HMRC-accepted run, call `request_payslip_export(business, run)` and keep
+the returned export ID. Poll `get_payslip_export(business, run, export_id)`
+until `PayslipExportStatus::Ready { download }`, then pass the descriptor and
+a writer to `write_payslip_zip`. This streams the archive in chunks. Treat the
+download URL as private. For an individual employment use `request_payslip`
+and `fetch_payslip_pdf`.
+
 ## Payroll calculations
 
 Scheme creation requires `tax_year_start` and an explicit `EmploymentAllowance`

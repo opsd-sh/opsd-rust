@@ -85,6 +85,11 @@ uuid_identifier!(
     "payroll run ID must be a UUID"
 );
 uuid_identifier!(
+    /// Public identifier of a payroll run's payslip ZIP export.
+    PayslipExportId,
+    "payslip export ID must be a UUID"
+);
+uuid_identifier!(
     /// Public identifier of an Opsd user.
     UserId,
     "user ID must be a UUID"
