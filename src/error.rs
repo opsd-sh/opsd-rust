@@ -6,6 +6,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("could not write download: {0}")]
+    WriteDownload(#[from] std::io::Error),
+
     #[error("invalid API credential")]
     InvalidApiCredential,
 

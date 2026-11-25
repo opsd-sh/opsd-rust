@@ -22,8 +22,8 @@ pub use employments::*;
 pub use error::ParseError;
 pub use identifiers::{
     BusinessId, BusinessInvitationId, EmployeeId, EmploymentId, InvoiceId, PayScheduleId,
-    PayeSchemeId, PayeSchemeRolloverId, PayrollRevisionId, PayrollRunId, PracticeId,
-    PracticeInvitationId, SubmissionAttemptId, UserId,
+    PayeSchemeId, PayeSchemeRolloverId, PayrollRevisionId, PayrollRunId, PayslipExportId,
+    PracticeId, PracticeInvitationId, SubmissionAttemptId, UserId,
 };
 pub use pay_schedules::*;
 pub use paye_schemes::*;
